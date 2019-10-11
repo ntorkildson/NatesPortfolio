@@ -6,15 +6,39 @@
 #include "GameFramework/Character.h"
 #include "WorthyCharacter.generated.h"
 
+
 class UInputComponent;
 
-UENUM(BlueprintType)		//"BlueprintType" is essential to include
-enum class EFireType : uint8
+class AWorthyWeapon;
+
+USTRUCT(BlueprintType)
+
+struct FPlayerStats
 {
-    singleShot  UMETA(DisplayName = "single shot"),
-    burstFire   UMETA(DisplayName = "burst shot"),
-    fullyAuto   UMETA(DisplayName = "fully auto")
+    GENERATED_BODY()
+
+    UPROPERTY()
+    int32 maxHealth;
+
+    UPROPERTY()
+    int32 Str;
+
+    UPROPERTY()
+    int32 Dex;
+
+    UPROPERTY()
+    int32 Int;
+
+    FPlayerStats()
+    {
+        maxHealth = 100;
+        Str = 10;
+        Dex = 10;
+        Int = 10;
+    }
+
 };
+
 
 UENUM(BlueprintType)
 enum class EFireMode : uint8
@@ -26,172 +50,158 @@ enum class EFireMode : uint8
 };
 
 
+UCLASS(config = Game)
 
-UCLASS(config=Game)
 class AWorthyCharacter : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	class USkeletalMeshComponent* Mesh1P;
+    /** Pawn mesh: 1st person view (arms; seen only by self) */
+    UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 
-	/** Gun mesh: 1st person view (seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* FP_Gun;
+    class USkeletalMeshComponent *Mesh1P;
 
-	/** Location on gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USceneComponent* FP_MuzzleLocation;
 
-	/** Gun mesh: VR view (attached to the VR controller directly, no arm, just the actual gun) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* VR_Gun;
+    /** First person camera */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 
-	/** Location on VR gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USceneComponent* VR_MuzzleLocation;
-
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FirstPersonCameraComponent;
-
-	/** Motion controller (right hand) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UMotionControllerComponent* R_MotionController;
-
-	/** Motion controller (left hand) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UMotionControllerComponent* L_MotionController;
+    class UCameraComponent *FirstPersonCameraComponent;
 
 public:
-	AWorthyCharacter();
 
-	void StopFire();
-
-	/***Weapon Stuffs*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	int32 numberOfProjectiles;
+    AWorthyCharacter();
 
     void EquipWeapon();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    EFireType ShotType;
+    void interact();
 
-    void SingleShot();
+    void dropWeapon();
 
-    void BurstShot();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    float TimeBetweenBurst;
+    TSubclassOf<AWorthyWeapon> DefaultWeapon;
 
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    AWorthyWeapon *CurrentWeapon;
 
-    void FullyAutomatic();
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    FPlayerStats myStats;
 
-    bool bIsFIring =false;
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    int32 currentHealth;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    int32 TimeBetweenShots = 1;
+    virtual float TakeDamage(float Damage, struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
+                             class AActor *DamageCauser) override;
 
-    FTimerHandle BurstTimerHandle;
+    UFUNCTION(Server, Reliable, WithValidation)
 
-    float LastFireTime;
+    void ServerFire();
 
+    void StopFire();
+
+    void TakeDamage();
+
+    void CheckResistances();
 
 protected:
-	virtual void BeginPlay();
+    virtual void BeginPlay();
 
 public:
-	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseTurnRate;
+    /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera
+    )
+    float BaseTurnRate;
 
-	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseLookUpRate;
+    /** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera
+    )
+    float BaseLookUpRate;
 
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	FVector GunOffset;
 
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	TSubclassOf<class AWorthyProjectile> ProjectileClass;
 
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	class USoundBase* FireSound;
-
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
-
-	/** Whether to use motion controller location for aiming. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	uint32 bUsingMotionControllers : 1;
+    /** Whether to use motion controller location for aiming. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+    uint32 bUsingMotionControllers : 1;
 
 protected:
-	
-	/** Fires a projectile. */
-	void OnFire();
+
+    /** Fires a projectile. */
+    void OnFire();
 
     //plays firing effects
-	void PlayEffects();
+    void PlayEffects();
 
-	void FireProjectile();
 
-	/** Resets HMD orientation and position in VR. */
-	void OnResetVR();
+    /** Resets HMD orientation and position in VR. */
+    void OnResetVR();
 
-	/** Handles moving forward/backward */
-	void MoveForward(float Val);
+    /** Handles moving forward/backward */
+    void MoveForward(float Val);
 
-	/** Handles stafing movement, left and right */
-	void MoveRight(float Val);
+    /** Handles stafing movement, left and right */
+    void MoveRight(float Val);
 
-	/**
-	 * Called via input to turn at a given rate.
-	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
-	 */
-	void TurnAtRate(float Rate);
+    /**
+     * Called via input to turn at a given rate.
+     * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
+     */
+    void TurnAtRate(float Rate);
 
-	/**
-	 * Called via input to turn look up/down at a given rate.
-	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
-	 */
-	void LookUpAtRate(float Rate);
+    /**
+     * Called via input to turn look up/down at a given rate.
+     * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
+     */
+    void LookUpAtRate(float Rate);
 
-	struct TouchData
-	{
-		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}
-		bool bIsPressed;
-		ETouchIndex::Type FingerIndex;
-		FVector Location;
-		bool bMoved;
-	};
-	void BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
-	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
-	void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
-	TouchData	TouchItem;
-	
+    struct TouchData
+    {
+        TouchData()
+        {
+            bIsPressed = false;
+            Location = FVector::ZeroVector;
+        }
+
+        bool bIsPressed;
+        ETouchIndex::Type FingerIndex;
+        FVector Location;
+        bool bMoved;
+    };
+
+    void BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
+
+    void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
+
+    void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
+
+    TouchData TouchItem;
+
 protected:
-	// APawn interface
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-	// End of APawn interface
+    // APawn interface
+    virtual void SetupPlayerInputComponent(UInputComponent *InputComponent) override;
+    // End of APawn interface
 
-	/* 
-	 * Configures input for touchscreen devices if there is a valid touch interface for doing so 
-	 *
-	 * @param	InputComponent	The input component pointer to bind controls to
-	 * @returns true if touch controls were enabled.
-	 */
-	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
+    /*
+     * Configures input for touchscreen devices if there is a valid touch interface for doing so
+     *
+     * @param	InputComponent	The input component pointer to bind controls to
+     * @returns true if touch controls were enabled.
+     */
+    bool EnableTouchscreenMovement(UInputComponent *InputComponent);
 
 public:
-	/** Returns Mesh1P subobject **/
-	FORCEINLINE class USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
-	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+    /** Returns Mesh1P subobject **/
+    FORCEINLINE class USkeletalMeshComponent *GetMesh1P() const
+    { return Mesh1P; }
+
+    /** Returns FirstPersonCameraComponent subobject **/
+    FORCEINLINE class UCameraComponent *GetFirstPersonCameraComponent() const
+    { return FirstPersonCameraComponent; }
+
+    /** Returns FirstPersonCameraComponent subobject **/
+    FORCEINLINE class AWorthyWeapon *GetCurrentWeapon() const
+    {
+        return CurrentWeapon;
+    }
 
 };
 

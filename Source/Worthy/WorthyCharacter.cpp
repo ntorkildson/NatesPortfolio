@@ -2,6 +2,7 @@
 
 #include "WorthyCharacter.h"
 #include "WorthyProjectile.h"
+#include "WorthyWeapon.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -11,6 +12,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
+#include "Net/UnrealNetwork.h"
+
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -29,60 +32,20 @@ AWorthyCharacter::AWorthyCharacter()
 	// Create a CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
+    //FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-	Mesh1P->SetOnlyOwnerSee(true);
+    Mesh1P->SetOnlyOwnerSee(false);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-	Mesh1P->bCastDynamicShadow = false;
-	Mesh1P->CastShadow = false;
-	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
-	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
+    Mesh1P->bCastDynamicShadow = true;
+    Mesh1P->CastShadow = true;
+    //Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
+//	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
 
-	// Create a gun mesh component
-	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
-	FP_Gun->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
-	FP_Gun->bCastDynamicShadow = false;
-	FP_Gun->CastShadow = false;
-	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	FP_Gun->SetupAttachment(RootComponent);
-
-	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
-	FP_MuzzleLocation->SetupAttachment(FP_Gun);
-	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
-
-	// Default offset from the character location for projectiles to spawn
-	GunOffset = FVector(100.0f, 0.0f, 10.0f);
-
-	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, FP_Gun, and VR_Gun 
-	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
-
-	// Create VR Controllers.
-	R_MotionController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("R_MotionController"));
-	R_MotionController->MotionSource = FXRMotionControllerBase::RightHandSourceId;
-	R_MotionController->SetupAttachment(RootComponent);
-	L_MotionController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("L_MotionController"));
-	L_MotionController->SetupAttachment(RootComponent);
-
-	// Create a gun and attach it to the right-hand VR controller.
-	// Create a gun mesh component
-	VR_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("VR_Gun"));
-	VR_Gun->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
-	VR_Gun->bCastDynamicShadow = false;
-	VR_Gun->CastShadow = false;
-	VR_Gun->SetupAttachment(R_MotionController);
-	VR_Gun->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-
-	VR_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("VR_MuzzleLocation"));
-	VR_MuzzleLocation->SetupAttachment(VR_Gun);
-	VR_MuzzleLocation->SetRelativeLocation(FVector(0.000004, 53.999992, 10.000000));
-	VR_MuzzleLocation->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));		// Counteract the rotation of the VR gun model.
-
-	// Uncomment the following line to turn motion controllers on by default:
-	//bUsingMotionControllers = true;
 }
+
 
 void AWorthyCharacter::BeginPlay()
 {
@@ -91,18 +54,13 @@ void AWorthyCharacter::BeginPlay()
 
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	//FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-    EquipWeapon();
-	// Show or hide the two versions of the gun based on whether or not we're using motion controllers.
-	if (bUsingMotionControllers)
-	{
-		VR_Gun->SetHiddenInGame(false, true);
-		Mesh1P->SetHiddenInGame(true, true);
-	}
-	else
-	{
-		VR_Gun->SetHiddenInGame(true, true);
-		Mesh1P->SetHiddenInGame(false, true);
-	}
+    if (Role == ROLE_Authority)
+    {
+        EquipWeapon();
+    }
+
+    //Mesh1P->SetHiddenInGame(false, false);
+	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -121,6 +79,13 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
     PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AWorthyCharacter::OnFire);
     PlayerInputComponent->BindAction("Fire", IE_Released, this, &AWorthyCharacter::StopFire);
 
+
+    PlayerInputComponent->BindAction("Drop", IE_Released, this, &AWorthyCharacter::dropWeapon);
+    PlayerInputComponent->BindAction("Interact", IE_Released, this, &AWorthyCharacter::interact);
+
+
+    PlayerInputComponent->BindAction("Spawn", IE_Released, this, &AWorthyCharacter::EquipWeapon);
+
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
 
@@ -137,35 +102,6 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("TurnRate", this, &AWorthyCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AWorthyCharacter::LookUpAtRate);
-}
-
-void AWorthyCharacter::OnFire()
-{
-    //FireProjectile();
-    bIsFIring = true;
-
-    switch(ShotType)
-    {
-        case EFireType::singleShot:
-            SingleShot();
-            break;
-        case EFireType::burstFire :
-            BurstShot();
-            break;
-        case EFireType::fullyAuto :
-            FullyAutomatic();
-            break;
-
-    }
-
-}
-
-void AWorthyCharacter::StopFire()
-{
-    //set is firing == false;
-    //stop spawning projectiles
-    bIsFIring = false;
-
 }
 
 
@@ -284,100 +220,85 @@ bool AWorthyCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerIn
 
 void AWorthyCharacter::EquipWeapon()
 {
-    FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+    //TODO: fix mesh equip orientation, projectiles fire correctly, but mesh is sideways...
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-}
+    FVector derp = GetMesh1P()->GetSocketLocation(TEXT("GripPoint"));
+    FRotator meshROt = GetMesh1P()->GetSocketRotation(TEXT("GripPoint"));
 
-void AWorthyCharacter::PlayEffects()
-{
-    // try and play the sound if specified
-    if (FireSound != NULL)
+    CurrentWeapon = GetWorld()->SpawnActor<AWorthyWeapon>(DefaultWeapon, derp, meshROt, SpawnParams);
+    //CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
+    CurrentWeapon->SetOwner(this);
+    CurrentWeapon->Instigator = this;
+    CurrentWeapon->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
+
+    if (CurrentWeapon)
     {
-        UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+        CurrentWeapon->SetOwner(this);
+        //CurrentWeapon->AttachToActor(this, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("GripPoint"));
     }
 
-    // try and play a firing animation if specified
-    if (FireAnimation != NULL)
-    {
-        // Get the animation object for the arms mesh
-        UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-        if (AnimInstance != NULL)
-        {
-            AnimInstance->Montage_Play(FireAnimation, 1.f);
-        }
-    }
 }
 
-void AWorthyCharacter::FireProjectile()
+void AWorthyCharacter::dropWeapon()
 {
-    // try and fire a projectile
-    if (ProjectileClass != NULL)
+    CurrentWeapon->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+}
+
+void AWorthyCharacter::interact()
+{
+
+}
+
+void AWorthyCharacter::OnFire()
+{
+    if (CurrentWeapon)
     {
-        UWorld* const World = GetWorld();
-        if (World != NULL)
-        {
-            if (bUsingMotionControllers)
-            {
-                const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
-                const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
-                World->SpawnActor<AWorthyProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-            }
-            else
-            {
-                const FRotator SpawnRotation = GetControlRotation();
-                // MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-                const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
-
-                //Set Spawn Collision Handling Override
-                FActorSpawnParameters ActorSpawnParams;
-                ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-                // spawn the projectile at the muzzle, buckshot firing
-                for(int32 i = 0; i < numberOfProjectiles; i++)
-                {
-                    World->SpawnActor<AWorthyProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-                    LastFireTime = GetWorld()->GetTimeSeconds();
-
-                }
-            }
-        }
+        CurrentWeapon->OnFire();
     }
 
-    PlayEffects();
-}
-
-
-
-void AWorthyCharacter::SingleShot()
-{
-    FireProjectile();
 
 }
 
-
-void AWorthyCharacter::BurstShot()
+bool AWorthyCharacter::ServerFire_Validate()
 {
-    //for each burst shot,
-
-    //set timer for shot delay
-    //at end of timer, fire projectile
-    //break when finished
-    FireProjectile();
-
+    return true;
 }
 
-
-void AWorthyCharacter::FullyAutomatic()
+void AWorthyCharacter::ServerFire_Implementation()
 {
+    OnFire();
+}
 
-    //while bisFIring == true && bhasammo == true
-    if(bIsFIring ==true)
+void AWorthyCharacter::StopFire()
+{
+    //start a timer to allow firing again -disallows left click spamming
+    if (CurrentWeapon)
     {
-        const float GameTime = GetWorld()->GetTimeSeconds();
-
-        GetWorld()->GetTimerManager().SetTimer(BurstTimerHandle, this, &AWorthyCharacter::FireProjectile,
-                                               LastFireTime + TimeBetweenShots - GameTime,
-                                               true);
+        CurrentWeapon->StopFire();
     }
+
 }
+
+
+float
+AWorthyCharacter::TakeDamage(float Damage, struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
+                             class AActor *DamageCauser)
+{
+    //TODO: resist and damage reduction algorithm goes here.
+    currentHealth -= Damage;
+    return currentHealth;
+}
+
+
+void AWorthyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AWorthyCharacter, CurrentWeapon);
+    DOREPLIFETIME(AWorthyCharacter, myStats);
+    DOREPLIFETIME(AWorthyCharacter, currentHealth);
+
+}	
 

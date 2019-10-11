@@ -4,12 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WorthyWeapon.h"
+
 #include "WorthyProjectile.generated.h"
 
 UCLASS(config=Game)
 class AWorthyProjectile : public AActor
 {
 	GENERATED_BODY()
+
+    virtual void PostInitializeComponents() override;
 
 	/** Sphere collision component */
 	UPROPERTY(VisibleDefaultsOnly, Category=Projectile)
@@ -19,12 +23,18 @@ class AWorthyProjectile : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	class UProjectileMovementComponent* ProjectileMovement;
 
+	/** Sphere collision component */
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+		class USphereComponent* MaxImpactRange;
+
+	void RadiusAffect();
+
 public:
 	AWorthyProjectile();
 
     virtual void BeginPlay() override;
 
-    void UpdateProjectileInformation();
+
 
 	/** called when projectile hits something */
 	UFUNCTION()
@@ -34,5 +44,24 @@ public:
 	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
+
+    struct FWeaponData MyWeapon;
+
+	void DealDamage(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	void SetupWeaponSystem();
+
+	void FindChainTargets();
+
+	void PierceCounter();
+
+	void BounceCounter();
+
+	void GeneateFork();
+
+	int32 CurrentPierceCount = 0;
+
+	int32 currentBounce=0;
+
 };
 
