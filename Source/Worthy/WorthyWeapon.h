@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WorthyItem.h"
 #include "WorthyWeapon.generated.h"
 
 
 class USkeletalMeshComponent;
 
 
-UENUM(BlueprintType)
+UENUM(BlueprintType)  //TODO: make this useful
 enum class EProjectileMods : uint8
 {
     Explode    UMETA(DisplayName = "Explode"),
@@ -25,8 +26,7 @@ enum class EProjectileMods : uint8
 
 
 
-USTRUCT(BlueprintType)
-
+USTRUCT(BlueprintType) //TODO: make this useful
 struct FWeaponData
 {
     GENERATED_USTRUCT_BODY()
@@ -63,6 +63,12 @@ struct FWeaponData
         Damage = 1;
         AllMods.Add(EProjectileMods::Chain); //
 		ActorToFollow = nullptr;
+		ExplosionRadius = 10;
+		NumberOfPierce =1;
+		NumberOfFork = 1;
+		NumberOfBounce = 1;
+		NumberOfChains = 1;
+
 
     }
 
@@ -71,26 +77,20 @@ struct FWeaponData
 
 
 UCLASS()
-class WORTHY_API AWorthyWeapon : public AActor
+class WORTHY_API AWorthyWeapon : public AWorthyItem
 {
 	GENERATED_BODY()
 /** Gun mesh: 1st person view (seen only by self) 
 
 */
 public:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WeaponStats")
-    USkeletalMeshComponent *WeaponMesh;
 
     /** Location on gun mesh where projectiles should spawn. */
-    UPROPERTY(VisibleDefaultsOnly, Category = "WeaponStats")
-
+    UPROPERTY(VisibleDefaultsOnly, Category = "ItemStats|WeaponStats")
     class USceneComponent *FP_MuzzleLocation;
 
-
+    //applies all the stats to the projectile
     void ApplyWeaponConfig(FWeaponData &weaponInfo);
-
-	
-
 
 public:	
 	// Sets default values for this actor's properties
@@ -107,7 +107,7 @@ public:
     void StopFire();
 
     /***Weapon Stuffs*/
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
     int32 numberOfProjectiles = 1;
 
     /** Fires a projectile. */
@@ -119,7 +119,7 @@ public:
 
     bool bIsFIring = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
     float TimeBetweenShots = 0.1f;  //time between each shot fired
 
 
@@ -133,24 +133,24 @@ public:
 
     bool bIsBursting;
 
-    UPROPERTY(EditDefaultsOnly, Category = "weaponStats")
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     FWeaponData WeaponStats;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 currentAmmo;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 maxAmmo;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 currentClips;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 maxClips;
 
     void useAmmo();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 NumberOfBurst = 1;
 
     /** Gun muzzle's offset from the characters location */
@@ -168,7 +168,6 @@ public:
 
     /** AnimMontage to play each time we fire */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-
     class UAnimMontage *FireAnimation;
 
 

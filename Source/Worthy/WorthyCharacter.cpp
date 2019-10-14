@@ -2,6 +2,7 @@
 
 #include "WorthyCharacter.h"
 #include "WorthyProjectile.h"
+#include "WorthyItem.h"
 #include "WorthyWeapon.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -238,8 +239,8 @@ void AWorthyCharacter::EquipWeapon()
         CurrentWeapon->SetOwner(this);
         //CurrentWeapon->AttachToActor(this, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("GripPoint"));
     }
-
 }
+
 
 void AWorthyCharacter::dropWeapon()
 {
@@ -248,8 +249,15 @@ void AWorthyCharacter::dropWeapon()
 
 void AWorthyCharacter::interact()
 {
+    //send out trace to see whats out there
+    //everything should inherit from a base class
+    //hit the interactwith funciton
+    //do whatever its supposed to do
+
 
 }
+
+
 
 void AWorthyCharacter::OnFire()
 {
@@ -282,6 +290,7 @@ void AWorthyCharacter::StopFire()
 }
 
 
+
 float
 AWorthyCharacter::TakeDamage(float Damage, struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
                              class AActor *DamageCauser)
@@ -291,6 +300,24 @@ AWorthyCharacter::TakeDamage(float Damage, struct FDamageEvent const &DamageEven
     return currentHealth;
 }
 
+void AWorthyCharacter::EquipItem(FName ItemSocketLocation, AWorthyItem *NewItem)
+{
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    FVector itemLocation = GetMesh1P()->GetSocketLocation(ItemSocketLocation);
+    FRotator itemRotation = GetMesh1P()->GetSocketRotation(ItemSocketLocation);
+
+
+    if (NewItem)
+    {
+        NewItem->SetOwner(this);
+        NewItem->Instigator = this;
+        NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ItemSocketLocation);
+        NewItem->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, ItemSocketLocation);
+
+    }
+}
 
 void AWorthyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {

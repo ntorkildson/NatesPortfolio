@@ -27,7 +27,6 @@ class AWorthyProjectile : public AActor
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 		class USphereComponent* MaxImpactRange;
 
-	void RadiusAffect();
 
 public:
 	AWorthyProjectile();
@@ -47,21 +46,7 @@ public:
 
     struct FWeaponData MyWeapon;
 
-	void DealDamage(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	void SetupWeaponSystem();
-
-	void FindChainTargets();
-
-	void PierceCounter();
-
-	void BounceCounter();
-
-	void GeneateFork();
-
-	int32 CurrentPierceCount = 0;
-
-	int32 currentBounce=0;
 
 };
 

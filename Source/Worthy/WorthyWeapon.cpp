@@ -20,14 +20,10 @@ AWorthyWeapon::AWorthyWeapon()
 	PrimaryActorTick.bCanEverTick = true;
     SetReplicates(true);
 
-    // Create a gun mesh component
-    WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-    RootComponent = WeaponMesh;
-    // WeaponMesh->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-    //WeaponMesh->SetupAttachment(RootComponent);
+
 
     FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
-    FP_MuzzleLocation->SetupAttachment(WeaponMesh);
+    FP_MuzzleLocation->SetupAttachment(ItemMesh);
     FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
 
@@ -59,7 +55,7 @@ void AWorthyWeapon::PlayEffects()
     if (FireAnimation != NULL)
     {
         // Get the animation object for the arms mesh
-        UAnimInstance *AnimInstance = WeaponMesh->GetAnimInstance();
+        UAnimInstance *AnimInstance = ItemMesh->GetAnimInstance();
         if (AnimInstance != NULL)
         {
             AnimInstance->Montage_Play(FireAnimation, 1.f);
@@ -89,7 +85,7 @@ void AWorthyWeapon::StopFire()
         ServerStopFire();
     }
     GetWorld()->GetTimerManager().SetTimer(SafeFireHandle, this, &AWorthyWeapon::ResetWeapon,
-                                           TimeBetweenShots * NumberOfBurst, true);
+                                           (TimeBetweenShots) * NumberOfBurst, true);
 
 }
 
@@ -103,7 +99,6 @@ void AWorthyWeapon::ServerStopFire_Implementation()
 {
     StopFire();
 }
-
 
 void AWorthyWeapon::ResetWeapon()
 {
@@ -216,4 +211,6 @@ void AWorthyWeapon::WeaponTimer()
 
 
 }
+
+
 

@@ -11,6 +11,8 @@ class UInputComponent;
 
 class AWorthyWeapon;
 
+class AWorthyItem;
+
 USTRUCT(BlueprintType)
 
 struct FPlayerStats
@@ -58,7 +60,6 @@ class AWorthyCharacter : public ACharacter
 
     /** Pawn mesh: 1st person view (arms; seen only by self) */
     UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-
     class USkeletalMeshComponent *Mesh1P;
 
 
@@ -73,6 +74,9 @@ public:
 
     void EquipWeapon();
 
+    void EquipItem(FName ItemSocketLocation, AWorthyItem* NewItem);
+
+
     void interact();
 
     void dropWeapon();
@@ -81,8 +85,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     TSubclassOf<AWorthyWeapon> DefaultWeapon;
 
+
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     AWorthyWeapon *CurrentWeapon;
+
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    AWorthyItem* Helmet;
+
+
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     FPlayerStats myStats;
@@ -94,7 +104,6 @@ public:
                              class AActor *DamageCauser) override;
 
     UFUNCTION(Server, Reliable, WithValidation)
-
     void ServerFire();
 
     void StopFire();
@@ -116,8 +125,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera
     )
     float BaseLookUpRate;
-
-
 
     /** Whether to use motion controller location for aiming. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -171,8 +178,6 @@ protected:
 
     void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 
-    void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
-
     TouchData TouchItem;
 
 protected:
@@ -186,6 +191,7 @@ protected:
      * @param	InputComponent	The input component pointer to bind controls to
      * @returns true if touch controls were enabled.
      */
+
     bool EnableTouchscreenMovement(UInputComponent *InputComponent);
 
 public:
