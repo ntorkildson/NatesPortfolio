@@ -10,5 +10,5 @@ AWorhtyWeapon: A weapon system that was designed to have as few variables as pos
 
 AGeneticAlgorithm : A templated GA for mutating whatever you fancy, in this case the example project mutates(or will mutate) every aspect of the game as it progresses. Having the rules, stats, weapons, and AI players change as the game goes on. 
 
-ANeuralNetwork: a basic neural network that the genetic algorithm mutates. Testing with this for replacing a default behavior tree is also a priority
+NNBrainComponent: a basic neural network that the genetic algorithm mutates. Testing with this for replacing a default behavior tree is also a priority
 
