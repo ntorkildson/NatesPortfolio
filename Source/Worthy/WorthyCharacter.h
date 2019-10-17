@@ -13,9 +13,10 @@ class AWorthyWeapon;
 
 class AWorthyItem;
 
-USTRUCT(BlueprintType)
 
-struct FPlayerStats
+//Genotypes are basically just whatever stats we want to the actor to have.
+USTRUCT(BlueprintType)
+struct FGenotype
 {
     GENERATED_BODY()
 
@@ -31,12 +32,22 @@ struct FPlayerStats
     UPROPERTY()
     int32 Int;
 
-    FPlayerStats()
+	UPROPERTY()
+		int32 mutationRate;
+
+	UPROPERTY()
+		int32 maxPertubation;
+
+
+
+    FGenotype()
     {
         maxHealth = 100;
         Str = 10;
         Dex = 10;
         Int = 10;
+		mutationRate = 1;
+		maxPertubation = 10;
     }
 
 };
@@ -95,7 +106,7 @@ public:
 
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    FPlayerStats myStats;
+    FGenotype myStats;
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     int32 currentHealth;
@@ -111,6 +122,8 @@ public:
     void TakeDamage();
 
     void CheckResistances();
+
+
 
 protected:
     virtual void BeginPlay();
@@ -129,6 +142,8 @@ public:
     /** Whether to use motion controller location for aiming. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
     uint32 bUsingMotionControllers : 1;
+
+
 
 protected:
 

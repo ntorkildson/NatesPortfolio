@@ -1,0 +1,15 @@
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/WorthyEditor-Win64-Shipping.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/Worthy-Win64-DebugGame.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/edit_cache.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/Worthy-Win64-Shipping.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/Worthy.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/WorthyEditor-Win64-DebugGame.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Editor-Win64-Shipping.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/WorthyEditor.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Editor-Win64-DebugGame.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Editor.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Game-Win64-DebugGame.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Game-Win64-Shipping.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/UE4Game.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/FakeTarget.dir
+C:/Users/nate/Documents/Unreal Projects/Worthy/cmake-build-release/CMakeFiles/rebuild_cache.dir

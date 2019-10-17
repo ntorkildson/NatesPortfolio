@@ -29,6 +29,7 @@ class AWorthyProjectile : public AActor
 
 
 public:
+
 	AWorthyProjectile();
 
     virtual void BeginPlay() override;
