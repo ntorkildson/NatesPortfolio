@@ -57,7 +57,7 @@ void AWorthyCharacter::BeginPlay()
 	//FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
     if (Role == ROLE_Authority)
     {
-        EquipWeapon();
+       // EquipWeapon();
     }
 
     //Mesh1P->SetHiddenInGame(false, false);
@@ -229,16 +229,15 @@ void AWorthyCharacter::EquipWeapon()
     FRotator meshROt = GetMesh1P()->GetSocketRotation(TEXT("GripPoint"));
 
     CurrentWeapon = GetWorld()->SpawnActor<AWorthyWeapon>(DefaultWeapon, derp, meshROt, SpawnParams);
-    //CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
+
+	
     CurrentWeapon->SetOwner(this);
     CurrentWeapon->Instigator = this;
-    CurrentWeapon->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
+    //CurrentWeapon->AttachToActor(, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
+	CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
 
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->SetOwner(this);
-        //CurrentWeapon->AttachToActor(this, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("GripPoint"));
-    }
+
+
 }
 
 

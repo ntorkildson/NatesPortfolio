@@ -100,10 +100,6 @@ public:
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     AWorthyWeapon *CurrentWeapon;
 
-    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    AWorthyItem* Helmet;
-
-
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     FGenotype myStats;

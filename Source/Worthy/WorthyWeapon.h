@@ -170,6 +170,8 @@ UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
     class UAnimMontage *FireAnimation;
 
+	void OnEquip();
+
 
 protected:
 
@@ -178,6 +180,8 @@ protected:
     void PlayEffects();
 
     void FireProjectile();
+
+	void FireTrace();
 
     UFUNCTION(Server, Reliable, WithValidation)
 

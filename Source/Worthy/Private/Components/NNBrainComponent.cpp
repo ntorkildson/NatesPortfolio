@@ -3,6 +3,10 @@
 
 #include "NNBrainComponent.h"
 
+
+
+
+
 // Sets default values for this component's properties
 UNNBrainComponent::UNNBrainComponent()
 {
@@ -34,8 +38,38 @@ void UNNBrainComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 
 void UNNBrainComponent::CreateNetwork()
 {
+	//create layers of NN
+	if (NumberOfHiddenLayers > 0)
+	{
+		//first layer
+		FNeuronLayer temp;
+		temp.NumNeurons = NeuronsPerHiddenLayer;
+		temp.NumInputsPerNeuron = NumberOfInputs;
+		NeuralNetwork.Emplace(temp);
+
+
+		//hidden layers
+		for (int32 i = 0; i < NumberOfHiddenLayers - 1; i++)
+		{	//first layer
+			FNeuronLayer temp2;
+			temp2.NumNeurons = NeuronsPerHiddenLayer;
+			temp2.NumInputsPerNeuron = NeuronsPerHiddenLayer;
+			NeuralNetwork.Emplace(temp2);
+
+		}
+
+		//output layer
+		FNeuronLayer temp3;
+		temp3.NumNeurons = NumberOfOutputs;
+		temp3.NumInputsPerNeuron = NeuronsPerHiddenLayer;
+		NeuralNetwork.Emplace(temp3);
+
+
+	}
 
 }
+
+
 
 int UNNBrainComponent::GetNumberOfWeights() const
 {
@@ -45,7 +79,16 @@ int UNNBrainComponent::GetNumberOfWeights() const
 
 void UNNBrainComponent::PutWeights(TArray<float> &weights)
 {
-
+	int32 tempWeight = 0;
+	for (int32 i = 0; i < NumberOfHiddenLayers; i++)
+	{
+		for(int32 j = 0; j<NeuralNetwork[i].NumNeurons; j++)
+			//each weight
+			for (int32 k = 0; k < NeuralNetwork[i].VecNeurons[j].inputs; k++)
+			{
+				NeuralNetwork[i].VecNeurons[j].weights[k] = weights[tempWeight++];
+			}
+	}
 }
 
 TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
@@ -65,28 +108,28 @@ TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
 			{
 				inputs = outputs;
 			}
-			outputs.clear();
-
-		}
+			outputs.Empty();
 
 
-		//for each neuron, sum the inputs and weights and * by sigmoid/relu to get result
-		for (int32 k = 0; k < NeuralNetwork[i].NumNeurons; k++)
-		{
-			float netInput = 0;
 
-			int NumInputs = NeuralNetwork[i].VecNeurons[k].inputs;
 
-			for (int l = 0; l < NumberOfInputs - 1; ++l)
+			//for each neuron, sum the inputs and weights and * by sigmoid/relu to get result
+			for (int32 k = 0; k < NeuralNetwork[i].NumNeurons; k++)
 			{
-				//sumn weights * inputs
-				netInput += NeuralNetwork[i].VecNeurons[k].weights[NumInputs - 1] * Bias;
+				float netInput = 0;
 
-				outputs.Emplace(Sigmoid(netInput, activationResponse));
+				int NumInputs = NeuralNetwork[i].VecNeurons[k].inputs;
+
+				for (int l = 0; l < NumberOfInputs - 1; ++l)
+				{
+					//sumn weights * inputs
+					netInput += NeuralNetwork[i].VecNeurons[k].weights[NumInputs - 1] * Bias;
+
+					outputs.Emplace(Sigmoid(netInput, activationResponse));
+				}
 			}
 		}
-
-
+		return outputs;
 	}
 	else
 	{
@@ -97,7 +140,7 @@ TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
 
 float UNNBrainComponent::Sigmoid(float activation, float response)
 {
-	return 1.0f;
+	return (1 / (1 + exp(-activation / response)));
 
 }
 

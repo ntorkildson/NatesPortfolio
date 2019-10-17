@@ -17,14 +17,16 @@ struct FNeuron
 		int32 inputs;
 
 	UPROPERTY()
-	TArray<int32> weights;
+	TArray<float> weights;
 
 	FNeuron()
 	{
 		inputs = 1;
-		weights.Init(1,1);
+		for (int32 i = 0; i < inputs; i++)
+		{
+			weights.Emplace(FMath::RandRange(0.0f, 1.0f));
+		}
 	}
-
 };
 
 //stores the number of neurons in its layer
@@ -39,12 +41,21 @@ struct FNeuronLayer
 	UPROPERTY()
 		TArray<FNeuron> VecNeurons;
 
+	UPROPERTY()
+		int32 NumInputsPerNeuron;
+
 	FNeuronLayer()
 	{
+
 		NumNeurons = 0;
+		for (int32 i = 0; i<NumNeurons; i++)
+		{
+			VecNeurons.SetNum(NumInputsPerNeuron);
+		}
 	}
 
 };
+
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -91,10 +102,12 @@ public:
 	//TODO: change to RELU
 	inline float Sigmoid(float activation, float response);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Neural Network")
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
 	float Bias;
-	UPROPERTY(EditDefaultsOnly, Category = "Neural Network")
-		float activationResponse;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
+	float activationResponse;
 };
 
 
