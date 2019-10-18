@@ -119,6 +119,8 @@ public:
 
     bool bIsFIring = false;
 
+	bool bCanFire = true;
+
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
     float TimeBetweenShots = 0.1f;  //time between each shot fired
 

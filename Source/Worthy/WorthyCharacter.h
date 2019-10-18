@@ -14,6 +14,7 @@ class AWorthyWeapon;
 class AWorthyItem;
 
 
+
 //Genotypes are basically just whatever stats we want to the actor to have.
 USTRUCT(BlueprintType)
 struct FGenotype
@@ -69,19 +70,23 @@ class AWorthyCharacter : public ACharacter
 {
     GENERATED_BODY()
 
-    /** Pawn mesh: 1st person view (arms; seen only by self) */
-    UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-    class USkeletalMeshComponent *Mesh1P;
 
+		/** Camera boom positioning the camera behind the character */
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class USpringArmComponent* CameraBoom;
 
-    /** First person camera */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-
-    class UCameraComponent *FirstPersonCameraComponent;
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class UCameraComponent* FollowCamera;
 
 public:
 
     AWorthyCharacter();
+
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+		USkeletalMeshComponent* MeshComp;
 
     void EquipWeapon();
 
@@ -206,19 +211,10 @@ protected:
     bool EnableTouchscreenMovement(UInputComponent *InputComponent);
 
 public:
-    /** Returns Mesh1P subobject **/
-    FORCEINLINE class USkeletalMeshComponent *GetMesh1P() const
-    { return Mesh1P; }
-
-    /** Returns FirstPersonCameraComponent subobject **/
-    FORCEINLINE class UCameraComponent *GetFirstPersonCameraComponent() const
-    { return FirstPersonCameraComponent; }
-
-    /** Returns FirstPersonCameraComponent subobject **/
-    FORCEINLINE class AWorthyWeapon *GetCurrentWeapon() const
-    {
-        return CurrentWeapon;
-    }
+	/** Returns CameraBoom subobject **/
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	/** Returns FollowCamera subobject **/
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 };
 

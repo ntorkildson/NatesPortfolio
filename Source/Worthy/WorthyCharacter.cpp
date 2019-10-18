@@ -9,6 +9,9 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/InputSettings.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
@@ -30,20 +33,27 @@ AWorthyCharacter::AWorthyCharacter()
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 
-	// Create a CameraComponent	
-	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-    //FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
-	FirstPersonCameraComponent->bUsePawnControlRotation = true;
+	// Don't rotate when the controller rotates. Let that just affect the camera.
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
 
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
-	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-    Mesh1P->SetOnlyOwnerSee(false);
-	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-    Mesh1P->bCastDynamicShadow = true;
-    Mesh1P->CastShadow = true;
-    //Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
-//	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
+	// Configure character movement
+	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+	GetCharacterMovement()->JumpZVelocity = 600.f;
+	GetCharacterMovement()->AirControl = 0.2f;
+
+	// Create a camera boom (pulls in towards the player if there is a collision)
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character	
+	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+
+	// Create a follow camera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 }
 
@@ -225,8 +235,8 @@ void AWorthyCharacter::EquipWeapon()
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-    FVector derp = GetMesh1P()->GetSocketLocation(TEXT("GripPoint"));
-    FRotator meshROt = GetMesh1P()->GetSocketRotation(TEXT("GripPoint"));
+    FVector derp = GetMesh()->GetSocketLocation(TEXT("GripPoint"));
+   FRotator meshROt = GetMesh()->GetSocketRotation(TEXT("GripPoint"));
 
     CurrentWeapon = GetWorld()->SpawnActor<AWorthyWeapon>(DefaultWeapon, derp, meshROt, SpawnParams);
 
@@ -234,7 +244,7 @@ void AWorthyCharacter::EquipWeapon()
     CurrentWeapon->SetOwner(this);
     CurrentWeapon->Instigator = this;
     //CurrentWeapon->AttachToActor(, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
-	CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
+//	CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
 
 
 
@@ -304,8 +314,8 @@ void AWorthyCharacter::EquipItem(FName ItemSocketLocation, AWorthyItem *NewItem)
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-    FVector itemLocation = GetMesh1P()->GetSocketLocation(ItemSocketLocation);
-    FRotator itemRotation = GetMesh1P()->GetSocketRotation(ItemSocketLocation);
+//    FVector itemLocation = GetMesh1P()->GetSocketLocation(ItemSocketLocation);
+ //   FRotator itemRotation = GetMesh1P()->GetSocketRotation(ItemSocketLocation);
 
 
     if (NewItem)
@@ -313,7 +323,7 @@ void AWorthyCharacter::EquipItem(FName ItemSocketLocation, AWorthyItem *NewItem)
         NewItem->SetOwner(this);
         NewItem->Instigator = this;
         NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ItemSocketLocation);
-        NewItem->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, ItemSocketLocation);
+        NewItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ItemSocketLocation);
 
     }
 }

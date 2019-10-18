@@ -45,6 +45,8 @@ void AWorthyWeapon::Tick(float DeltaTime)
 
 void AWorthyWeapon::PlayEffects()
 {
+	//TODO: send Firing animation/ attacking animation to owning pawn
+
     // try and play the sound if specified
     if (FireSound != NULL)
     {
@@ -115,15 +117,18 @@ void AWorthyWeapon::useAmmo()
 {
     if (currentAmmo != 0)
         currentAmmo -= 1;
-    else
-    {
-        if (currentClips != 0)
+    else if (currentClips != 0)
         {
             currentAmmo = maxAmmo;
             currentClips -= 1;
 
         }
-    }
+    
+	else
+	{
+	bCanFire = false;
+
+	}
 }
 
 void AWorthyWeapon::OnEquip()
@@ -131,6 +136,8 @@ void AWorthyWeapon::OnEquip()
 
 	
 }
+
+
 
 void AWorthyWeapon::FireProjectile()
 {
@@ -195,7 +202,7 @@ void AWorthyWeapon::FireProjectile()
 
 void AWorthyWeapon::FireTrace()
 {
-	if (Role == ROLE_Authority)
+	if (Role == ROLE_Authority && bCanFire)
 	{
 		AActor* MyOwner = GetOwner();
 
@@ -203,16 +210,18 @@ void AWorthyWeapon::FireTrace()
 		{
 			//start trace variables
 			FHitResult myHitResult;
-			FVector EyeLocation = MyOwner->GetActorLocation();
-			const FRotator EyeRotation = GetOwner()->GetInstigatorController()->GetControlRotation();
+			//FVector EyeLocation = MyOwner->GetActorLocation();
+			//const FRotator EyeRotation = GetOwner()->GetInstigatorController()->GetControlRotation();
 
+			FVector EyeLocation;
+			FRotator EyeRotation;
 
-			//MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotatoin);
+			MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);  
 			
-			FVector muzzleLocation =
-				((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation());
+			EyeRotation = GetOwner()->GetActorRotation();
 
-			FVector EndLocation = EyeLocation + (EyeRotation.Vector() + 1000);
+
+			FVector EndLocation = EyeLocation + EyeRotation.Vector() * 1000;
 			//FVector EndLocation = FMath::VRandCone(EyeLocation, 50) + (EyeRotatoin.Vector() + 10000);
 			FCollisionQueryParams collisionParams;
 			collisionParams.AddIgnoredActor(MyOwner);
@@ -230,12 +239,15 @@ void AWorthyWeapon::FireTrace()
 
 			}
 
-
+			useAmmo();
+			PlayEffects();
 
 			//
 		}
 	}
 }
+
+
 
 void AWorthyWeapon::ServerFire_Implementation()
 {
@@ -250,7 +262,6 @@ bool AWorthyWeapon::ServerFire_Validate()
 void AWorthyWeapon::WeaponTimer()
 {
 
-    //while bisFIring == true && bhasammo == true
     if (bIsFIring == true)
     {
 

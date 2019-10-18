@@ -1,2 +1,7 @@
 # Project exclude paths
 /cmake-build-debug/
+/Saved/
+/Intermediate/
+/Binaries/Win64/
+/.vs/Worthy/v15/
+/.idea/
