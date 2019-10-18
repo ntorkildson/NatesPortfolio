@@ -43,8 +43,6 @@ struct FItemStats
 
 };
 
-class USkeletalMeshComponent;
-
 UCLASS()
 class WORTHY_API AWorthyItem : public AActor
 {
@@ -52,7 +50,7 @@ class WORTHY_API AWorthyItem : public AActor
 	
 public:
 
-UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "ItemStats")
+UPROPERTY(EditDefaultsOnly, Category = "ItemStats")
 USkeletalMeshComponent* ItemMesh;
 
 
