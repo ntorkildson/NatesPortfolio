@@ -47,7 +47,7 @@ struct FNeuronLayer
 	FNeuronLayer()
 	{
 
-		NumNeurons = 0;
+		//NumNeurons = 0;
 		for (int32 i = 0; i<NumNeurons; i++)
 		{
 			VecNeurons.SetNum(NumInputsPerNeuron);
@@ -77,14 +77,18 @@ public:
 
 
 	//building an actual NN that gets played with by a GA
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	int NumberOfInputs;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	int NumberOfOutputs;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	int NumberOfHiddenLayers;
 
 	int NeuronsPerHiddenLayer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	TArray<FNeuronLayer> NeuralNetwork;
 
 	void CreateNetwork();

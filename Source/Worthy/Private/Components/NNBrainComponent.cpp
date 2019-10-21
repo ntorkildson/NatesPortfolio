@@ -22,7 +22,7 @@ UNNBrainComponent::UNNBrainComponent()
 void UNNBrainComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	CreateNetwork();
 	// ...
 	
 }
@@ -47,7 +47,8 @@ void UNNBrainComponent::CreateNetwork()
 		temp.NumInputsPerNeuron = NumberOfInputs;
 		NeuralNetwork.Emplace(temp);
 
-
+	}
+		/*
 		//hidden layers
 		for (int32 i = 0; i < NumberOfHiddenLayers - 1; i++)
 		{	//first layer
@@ -57,7 +58,8 @@ void UNNBrainComponent::CreateNetwork()
 			NeuralNetwork.Emplace(temp2);
 
 		}
-
+	
+		
 		//output layer
 		FNeuronLayer temp3;
 		temp3.NumNeurons = NumberOfOutputs;
@@ -66,7 +68,7 @@ void UNNBrainComponent::CreateNetwork()
 
 
 	}
-
+	*/
 }
 
 
@@ -99,8 +101,8 @@ TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
 	int32 cWeight = 0;
 
 	//check the inputs are correct
-	if (inputs.Num() == NumberOfInputs)
-	{
+	//if (inputs.Num() == NumberOfInputs)
+	//{
 
 		for (int32 i = 0; i < NumberOfHiddenLayers + 1; i++) // +1 is the bias weight
 		{
@@ -130,12 +132,12 @@ TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
 			}
 		}
 		return outputs;
-	}
-	else
+	//}
+	/*else
 	{
 		//returns and empty array
 		return outputs;
-	}
+	}*/
 }
 
 float UNNBrainComponent::Sigmoid(float activation, float response)
