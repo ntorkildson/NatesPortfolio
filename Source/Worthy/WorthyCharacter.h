@@ -19,39 +19,53 @@ class AWorthyItem;
 USTRUCT(BlueprintType)
 struct FGenotype
 {
-    GENERATED_BODY()
 
-    UPROPERTY()
-    int32 maxHealth;
+	GENERATED_BODY()
 
-    UPROPERTY()
-    int32 Str;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		int32 maxHealth;
 
-    UPROPERTY()
-    int32 Dex;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		int32 Str;
 
-    UPROPERTY()
-    int32 Int;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		int32 Dex;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		int32 Int;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 		int32 mutationRate;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 		int32 maxPertubation;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Stats")
+	TArray<float> weights;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Stats")
+	float fitness;
 
-
-    FGenotype()
-    {
-        maxHealth = 100;
-        Str = 10;
-        Dex = 10;
-        Int = 10;
+	FGenotype()
+	//FGenotype(TArray<float> inputWeights, float inputFitness) : weights(inputWeights), fitness(inputFitness)
+	{
+		maxHealth = 100;
+		Str = 10;
+		Dex = 10;
+		Int = 10;
 		mutationRate = 1;
 		maxPertubation = 10;
-    }
+
+		
+		weights.Emplace(FMath::RandRange(0.0f, 1.0f));
+		fitness = FMath::RandRange(0.0f, 1.0f);
+	}
+
+	
 
 };
+
+
 
 
 UENUM(BlueprintType)
@@ -106,7 +120,7 @@ public:
     AWorthyWeapon *CurrentWeapon;
 
 
-    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
     FGenotype myStats;
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
@@ -128,6 +142,7 @@ public:
 
 protected:
     virtual void BeginPlay();
+	virtual void Tick(float DeltaTime) override;
 
 public:
     /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */

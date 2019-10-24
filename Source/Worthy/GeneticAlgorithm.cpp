@@ -3,6 +3,8 @@
 
 #include "GeneticAlgorithm.h"
 #include "WorthyCharacter.h"
+#include "WorthyAICharacter.h"
+
 
 // Sets default values
 AGeneticAlgorithm::AGeneticAlgorithm()
@@ -27,6 +29,7 @@ void AGeneticAlgorithm::RouletteSelection()
 	//take remaining and breed together randomly
 	//its really not a great way to do things tho....
 }
+
 
 void AGeneticAlgorithm::Adaptation()
 {
@@ -54,7 +57,6 @@ FGenotype AGeneticAlgorithm::BabyMaker(FGenotype& mom, FGenotype& dad)
 }
 
 
-
 // Called when the game starts or when spawned
 void AGeneticAlgorithm::BeginPlay()
 {
@@ -66,6 +68,42 @@ void AGeneticAlgorithm::BeginPlay()
 void AGeneticAlgorithm::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+}
+
+//TODO: change this to just take GENOTYPES. easier adjusting
+TArray<FGenotype> AGeneticAlgorithm::Epoch(AWorthyAICharacter &Dad, AWorthyAICharacter &Mom)
+{
+
+	//old population
+	
+
+	//store new chromosomes
+
+	//breed brains together
+
+	//while newPOP < popsize
+		///*
+	FGenotype child;
+	child.maxHealth = (CrossOver(Mom.myStats.maxHealth, Dad.myStats.maxHealth));
+	//child->myStats.maxHealth = CrossOver(Mom->myStats.maxHealth, Dad->myStats.maxHealth);
+	//Mutation(child->myStats.maxHealth, child->myStats.mutationRate, child->myStats.maxPertubation);
+	
+	TArray<FGenotype> temp;
+	temp.Emplace(child);
+	return temp;
+
+	/* 
+			babymaker(mom/dad)
+			mutate us
+
+			emplace into new population
+
+			return new population
+
+			
+	*/
+
 
 }
 

@@ -55,10 +55,11 @@ HA Mutation(HA &stat, float mutationRate, HA maxPertubation)
 }
 
 
+class AWorthyAICharacter;
 
 
 //TODO: turn this into an Actor component
-UCLASS()
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class WORTHY_API AGeneticAlgorithm : public AActor
 {
 	GENERATED_BODY()
@@ -75,9 +76,9 @@ public:
 
 	virtual void Coevolution();//TODO: https://evolution.berkeley.edu/evolibrary/article/0_0_0/evo_34
 
-	//TODO: template this, testing required
 	UFUNCTION(BlueprintCallable, Category = "Genetic Algorithm")
 	FGenotype BabyMaker(FGenotype& mom, FGenotype& dad); //returns a new child of whatever stats we have
+
 
 
 protected:
@@ -87,5 +88,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	TArray<FGenotype> Epoch(AWorthyAICharacter &Dad, AWorthyAICharacter &Mom);
 
 };

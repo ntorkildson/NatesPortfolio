@@ -8,33 +8,36 @@
 
 
 //a basic neuron, weights and inputs from the previous layer
-USTRUCT(BlueprintType)
+USTRUCT(immutable, noexport, BlueprintType)
 struct FNeuron
 {
-	GENERATED_BODY()
 
-		UPROPERTY()
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IntVector2D")
 		int32 inputs;
 
-	UPROPERTY()
-	TArray<float> weights;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IntVector2D")
+		TArray<float> weights;
 
-	FNeuron()
+	FNeuron();
+	
+	FNeuron(int32 numInputs)
 	{
-		inputs = 1;
-		for (int32 i = 0; i < inputs; i++)
+		for (int32 i = 0; i < numInputs + 1; i++)
 		{
 			weights.Emplace(FMath::RandRange(0.0f, 1.0f));
 		}
 	}
+
+
 };
 
+
+
 //stores the number of neurons in its layer
-USTRUCT(BlueprintType)
+USTRUCT(noexport, BlueprintType)
 struct FNeuronLayer
 {
-	GENERATED_BODY()
-	
+
 		UPROPERTY()
 		int32 NumNeurons;
 
@@ -44,17 +47,17 @@ struct FNeuronLayer
 	UPROPERTY()
 		int32 NumInputsPerNeuron;
 
-	FNeuronLayer()
+	FNeuronLayer();
+	FNeuronLayer(int32 NumNeurons_, int32 NumInputsPerNeuron_)
 	{
-
-		NumNeurons = 0;
-		for (int32 i = 0; i<NumNeurons; i++)
+		for (int32 i = 0; i < NumNeurons_; i++)
 		{
-			VecNeurons.SetNum(NumInputsPerNeuron);
+			VecNeurons.Emplace(FNeuron(NumInputsPerNeuron_));
 		}
 	}
 
 };
+
 
 
 
@@ -76,27 +79,41 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 
+
+
 	//building an actual NN that gets played with by a GA
-	int NumberOfInputs;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
+	int32 NumberOfInputs;
 
-	int NumberOfOutputs;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
+	int32 NumberOfOutputs;
 
-	int NumberOfHiddenLayers;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
+	int32 NumberOfHiddenLayers;
 
-	int NeuronsPerHiddenLayer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
+	int32 NeuronsPerHiddenLayer;
 
+	UPROPERTY(BlueprintReadOnly,Category = "Neural Network")
 	TArray<FNeuronLayer> NeuralNetwork;
 
 	void CreateNetwork();
 
-	int GetNumberOfWeights() const;
+	int32 GetNumberOfWeights() const;
 
+	int32 Fitness;
 
 	void PutWeights(TArray<float> &weights);
 
+	void IncrementFItness(int32 amount);
+
+	void DecrementFitness(int32 amount);
 
 	//calculates the outputs based on the inputs
 	TArray<float> Update(TArray<float> &inputs);
+
+
+	TArray<float>  GetWeights() const;
 
 
 	//TODO: change to RELU
@@ -108,6 +125,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
 	float activationResponse;
+
+	void RunSimulation();
+
+	int32 SimulationTime;
+
+
 };
 
 

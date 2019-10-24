@@ -7,6 +7,7 @@
 
 
 
+
 // Sets default values for this component's properties
 UNNBrainComponent::UNNBrainComponent()
 {
@@ -24,7 +25,7 @@ void UNNBrainComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	
+	CreateNetwork();
 }
 
 
@@ -38,33 +39,38 @@ void UNNBrainComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 
 void UNNBrainComponent::CreateNetwork()
 {
+
+
 	//create layers of NN
 	if (NumberOfHiddenLayers > 0)
 	{
-		//first layer
-		FNeuronLayer temp;
-		temp.NumNeurons = NeuronsPerHiddenLayer;
-		temp.NumInputsPerNeuron = NumberOfInputs;
-		NeuralNetwork.Emplace(temp);
+
+		NeuralNetwork.Emplace(FNeuronLayer(NeuronsPerHiddenLayer, NumberOfInputs));
+		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Green, FString::Printf(TEXT("Neurons per hidden layer: %d "), NeuronsPerHiddenLayer));
+		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Green, FString::Printf(TEXT("----Number of Inputs: %d "), NumberOfInputs));
 
 
 		//hidden layers
 		for (int32 i = 0; i < NumberOfHiddenLayers - 1; i++)
-		{	//first layer
-			FNeuronLayer temp2;
-			temp2.NumNeurons = NeuronsPerHiddenLayer;
-			temp2.NumInputsPerNeuron = NeuronsPerHiddenLayer;
-			NeuralNetwork.Emplace(temp2);
+		{	
+
+			NeuralNetwork.Emplace(FNeuronLayer(NeuronsPerHiddenLayer, NumberOfHiddenLayers));
+		//	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Black, FString::Printf(TEXT("-------Neurons per hidden layer: %d "), NeuronsPerHiddenLayer));
+		//	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Black, FString::Printf(TEXT("-------Number of Inputs: %d "), NeuronsPerHiddenLayer));
 
 		}
 
 		//output layer
-		FNeuronLayer temp3;
-		temp3.NumNeurons = NumberOfOutputs;
-		temp3.NumInputsPerNeuron = NeuronsPerHiddenLayer;
-		NeuralNetwork.Emplace(temp3);
+	
+		NeuralNetwork.Emplace(FNeuronLayer(NumberOfOutputs, NeuronsPerHiddenLayer));
 
+	//	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Blue, FString::Printf(TEXT("-----------Number of outputs: %d "), NumberOfOutputs));
+		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Green, FString::Printf(TEXT("-----------Neurons per hidden layer: %d "), NeuronsPerHiddenLayer));
+	}
 
+	else
+	{
+		NeuralNetwork.Emplace(FNeuronLayer(NumberOfOutputs, NumberOfInputs));
 	}
 
 }
@@ -73,12 +79,25 @@ void UNNBrainComponent::CreateNetwork()
 
 int UNNBrainComponent::GetNumberOfWeights() const
 {
-	return 1;
+	int32 weights = 0;
 
+	for (int32 i = 0; i < NumberOfHiddenLayers; i++)
+	{
+
+		for (int j = 0; j < NeuralNetwork[i].NumNeurons; i++)
+		{
+			for (int32 k = 0; k<NeuralNetwork[i].VecNeurons[j].inputs; k++)
+			{
+				weights++;
+			}
+		}
+	}
+	return weights;
 }
 
 void UNNBrainComponent::PutWeights(TArray<float> &weights)
 {
+	
 	int32 tempWeight = 0;
 	for (int32 i = 0; i < NumberOfHiddenLayers; i++)
 	{
@@ -89,58 +108,117 @@ void UNNBrainComponent::PutWeights(TArray<float> &weights)
 				NeuralNetwork[i].VecNeurons[j].weights[k] = weights[tempWeight++];
 			}
 	}
+	
+}
+
+
+void UNNBrainComponent::IncrementFItness(int32 amount)
+{
+	Fitness+=amount;
+}
+
+void UNNBrainComponent::DecrementFitness(int32 amount)
+{
+	Fitness-= amount;
 }
 
 TArray<float> UNNBrainComponent::Update(TArray<float> &inputs)
 {
-
 	TArray<float> outputs;
 
 	int32 cWeight = 0;
 
+	
 	//check the inputs are correct
-	if (inputs.Num() == NumberOfInputs)
+ 	if (inputs.Num() != NumberOfInputs)
+ 	{
+ 		return outputs;
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("something is horribly wrong "));
+ 	}
+	
+	for (int32 i = 0; i < NumberOfHiddenLayers + 1; i++) // +1 is the bias weight
+	{
+		//TODO: double check this, I have a feeling its wrong
+		//for each neuron, sum the inputs and weights and * by sigmoid/relu to get result
+		for (int32 j = 0; j < NeuralNetwork[i].NumNeurons; j++)
+		{
+			float netInput = 0;
+
+			int NumInputs = NeuralNetwork[i].VecNeurons[j].inputs;
+
+			for (int k = 0; k < NumberOfInputs - 1; ++k)
+			{
+				//sumn weights * inputs
+				netInput += NeuralNetwork[i].VecNeurons[j].weights[k] * inputs[cWeight++];
+
+			}
+
+			//add bias
+			netInput += NeuralNetwork[i].VecNeurons[j].weights[NumInputs + 1] * Bias;
+			//store outputs for each layer as we gnerate
+			outputs.Emplace(Sigmoid(netInput, activationResponse));
+
+		}
+		
+	}
+	
+	return outputs;
+}
+
+
+	
+
+
+
+
+
+TArray<float> UNNBrainComponent::GetWeights() const
+{
+	TArray<float> weights;
+
+	//for each layer
+	for (int i = 0; i < NumberOfHiddenLayers + 1; ++i)
 	{
 
-		for (int32 i = 0; i < NumberOfHiddenLayers + 1; i++) // +1 is the bias weight
+		//for each neuron
+		for (int j = 0; j < NeuralNetwork[i].NumNeurons; ++j)
 		{
-			if (i > 0)
+			//for each weight
+			for (int k = 0; k < NeuralNetwork[i].VecNeurons[j].inputs; ++k)
 			{
-				inputs = outputs;
-			}
-			outputs.Empty();
-
-
-
-
-			//for each neuron, sum the inputs and weights and * by sigmoid/relu to get result
-			for (int32 k = 0; k < NeuralNetwork[i].NumNeurons; k++)
-			{
-				float netInput = 0;
-
-				int NumInputs = NeuralNetwork[i].VecNeurons[k].inputs;
-
-				for (int l = 0; l < NumberOfInputs - 1; ++l)
-				{
-					//sumn weights * inputs
-					netInput += NeuralNetwork[i].VecNeurons[k].weights[NumInputs - 1] * Bias;
-
-					outputs.Emplace(Sigmoid(netInput, activationResponse));
-				}
+				weights.Emplace(NeuralNetwork[i].VecNeurons[j].weights[k]);
 			}
 		}
-		return outputs;
 	}
-	else
-	{
-		//returns and empty array
-		return outputs;
-	}
+
+	return weights;
 }
 
 float UNNBrainComponent::Sigmoid(float activation, float response)
 {
 	return (1 / (1 + exp(-activation / response)));
 
+}
+
+void UNNBrainComponent::RunSimulation()
+{
+	//how often do we cycle the system
+
+	//for each AI, update NN with inputs
+
+	//if 'events' happen adjust fitness accordingly
+
+	//update chromosones fitness score
+
+	//generation complete
+
+		//run GA and update brains
+
+			//average fitness
+			//best fitness
+			//increment generation counter
+			//reset timer
+			//insert new brain into AI
+			//reset temp brain
 }
 

@@ -74,6 +74,11 @@ void AWorthyCharacter::BeginPlay()
 	
 }
 
+void AWorthyCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -333,7 +338,7 @@ void AWorthyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(AWorthyCharacter, CurrentWeapon);
-    DOREPLIFETIME(AWorthyCharacter, myStats);
+   // DOREPLIFETIME(AWorthyCharacter, myStats);
     DOREPLIFETIME(AWorthyCharacter, currentHealth);
 
 }	
