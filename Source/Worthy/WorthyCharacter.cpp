@@ -17,7 +17,7 @@
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 #include "Net/UnrealNetwork.h"
-
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -97,7 +97,7 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 
     PlayerInputComponent->BindAction("Drop", IE_Released, this, &AWorthyCharacter::dropWeapon);
-    PlayerInputComponent->BindAction("Interact", IE_Released, this, &AWorthyCharacter::interact);
+    PlayerInputComponent->BindAction("Interact", IE_Released, this, &AWorthyCharacter::Interact);
 
 
     PlayerInputComponent->BindAction("Spawn", IE_Released, this, &AWorthyCharacter::EquipWeapon);
@@ -236,7 +236,6 @@ bool AWorthyCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerIn
 
 void AWorthyCharacter::EquipWeapon()
 {
-    //TODO: fix mesh equip orientation, projectiles fire correctly, but mesh is sideways...
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
@@ -261,14 +260,52 @@ void AWorthyCharacter::dropWeapon()
     CurrentWeapon->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
 }
 
-void AWorthyCharacter::interact()
+void AWorthyCharacter::Interact()
 {
-    //send out trace to see whats out there
-    //everything should inherit from a base class
-    //hit the interactwith funciton
-    //do whatever its supposed to do
+	//send out trace to see whats out there
+	//everything should inherit from a base class
+	//hit the interactwith funciton
+	//do whatever its supposed to do
+
+	if (Role == ROLE_Authority)
+	{
+		AActor* MyOwner = GetOwner();
+
+	
+			//start trace variables
+			FHitResult myHitResult;
+
+			FVector EyeLocation;
+			FRotator EyeRotation;
+
+			//GetActorEyesViewPoint(EyeLocation, EyeRotation);
+
+			EyeRotation = FollowCamera->GetComponentRotation();
 
 
+			EyeLocation = FollowCamera->GetComponentLocation();
+
+			FVector EndLocation = EyeLocation + EyeRotation.Vector() * 1000;
+
+			FCollisionQueryParams collisionParams;
+			collisionParams.AddIgnoredActor(MyOwner);
+			collisionParams.AddIgnoredActor(this);
+			collisionParams.bTraceComplex = true;
+			DrawDebugLine(GetWorld(), EyeLocation, EndLocation, FColor::Silver, false, 1.f, 0, 1.0f);
+			UE_LOG(LogTemp, Log, TEXT("Trace for object"));
+
+			//check hit
+			if (GetWorld()->LineTraceSingleByChannel(myHitResult, EyeLocation, EndLocation, ECollisionChannel::ECC_WorldDynamic, collisionParams))
+			{
+				//debug line
+				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("we found a toy"));
+				Cast<AWorthyItem>(myHitResult.GetActor());
+
+
+			}
+
+		
+	}
 }
 
 

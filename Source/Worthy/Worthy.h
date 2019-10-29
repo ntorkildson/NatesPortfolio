@@ -3,3 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+//Neural network and Genetic algorithm loggin
+//DECLARE_LOG_CATEGORY_EXTERN(NeuralNetLog, Log, All);

@@ -200,6 +200,7 @@ void AWorthyWeapon::FireProjectile()
 
 }
 
+
 void AWorthyWeapon::FireTrace()
 {
 	if (Role == ROLE_Authority && bCanFire)

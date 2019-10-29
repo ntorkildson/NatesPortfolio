@@ -54,5 +54,6 @@ public:
 
 	int32 GenerationCounter;
 
+
 };
 

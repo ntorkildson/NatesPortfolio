@@ -52,8 +52,12 @@ public:
 		EAIChoice ActionEvent;
 
 
-		float AISensors();
-		float SideSensor();
+	
+
+		float forwardSensor();
+		float leftSensor();
+		float rightSensor();
+
 
 		int32 GenerationCounter=0;
 

@@ -11,7 +11,7 @@
 class USkeletalMeshComponent;
 
 
-UENUM(BlueprintType)  //TODO: make this useful
+UENUM(BlueprintType)
 enum class EProjectileMods : uint8
 {
     Explode    UMETA(DisplayName = "Explode"),

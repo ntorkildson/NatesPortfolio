@@ -83,7 +83,18 @@ public:
 
 	void UpdateStats();
 
-    void AttachToSocket();
+
+	//when Item is hit by a trace, despawn and add to inventory
+	void PickupItem();
+
+	void EquipItem(FName SocketName); //Equips Item to the corresponding Socket, socket is also relative to attach point(helment, chest artmor, etc)
+
+	void UnEquipItem(); //Unequips the item and places it in the inventory
+
+	void DropItem(); // takes item in inventory, spawns it and drops it on the ground.
+
+
+
 
 
 };

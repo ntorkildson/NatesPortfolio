@@ -23,7 +23,7 @@ void AWorthyAISpawner::BeginPlay()
 	Super::BeginPlay();
 
 	SpawnAIClass();
-	RunSimulation();
+	//RunSimulation();
 
 }
 
@@ -69,44 +69,69 @@ void AWorthyAISpawner::SpawnAIClass()
 
 void AWorthyAISpawner::RunSimulation()
 {
-
-	//run the localized simulation for each of the actors
-	for (int32 i = 0; i < FullPopulation.Num(); i++)
+	if (GenerationCounter++ < LegnthOfSimulation)
 	{
-		FullPopulation[i]->UpdateBrain();
-
-	}
-
-
-	//for each AI, update NN with inputs
-
-	//if 'events' happen adjust fitness accordingly
-
-	//update chromosones fitness score
-
-	//generation complete
-
-		//run GA and update brains
-	for (int32 i = 0; i < FullPopulation.Num() % 2; i++)
-	{
-		for (int32 j = 0; j < FullPopulation.Num() % 2; j++)
+		//run the localized simulation for each of the actors
+		for (int32 i = 0; i < FullPopulation.Num(); i++)
 		{
-			GeneticALgorithm->Epoch(FullPopulation[i], FullPopulation[j]);
-			//average fitness
-			//best fitness
-			//increment generation counter
-			GenerationCounter++;
-			//reset timer
+			FullPopulation[i]->UpdateBrain();
 
-			//insert new brain into AI
 
-			//reset temp brain
 		}
+
+
+		//for each AI, update NN with inputs
+
+
+
+		//if 'events' happen adjust fitness accordingly
+
+		//update chromosones fitness score
+
+		//generation complete
 	}
+	//run GA and update brains
+/*
+	ThePopulationOfGenomes/Genotypes = GA->Epoch(Genotype) pass by reference I guess
+
+	for every creature
+	creatures.putweights(populationweight[i].vecweights
+
+	creatures.reset()
+*/
+
+//average fitness
+	//for FullPopulation
+		//get Genotype.fitness = POpulation.Fitness
+			//add them all up and average them out
+			//also grab the best while we're at it
+//increment generation counter
+	GenerationCounter++;
+	//reset timer
+		//for however many 'ticks' or cycles we do this for
+
+	/*
+
+		run GA to create new population of GENOTYPES!
+			GeneticALgorithm->EPOCH(GENOTYPES);
+
+	*/
+
+	//insert new brain into AI
+			/*
+				for each Creature
+				creature.putweights(GENOTYPE[i].weights];
+
+							//reset temp brain
+
+				creature.reset();
+			*/
+
+
 	for (int32 i = 0; i <= NumberOfAI; i++)
 	{
-		
-		FullPopulation[i].Emplace(AdjustedGenomes[i].weights);
+		//	FullPopulation[1].MyBrain.NeuronLayers.Neurons.weights);
+		//	FullPopulation[i].Emplace(AdjustedGenomes[i].weights);
 	}
 
 }

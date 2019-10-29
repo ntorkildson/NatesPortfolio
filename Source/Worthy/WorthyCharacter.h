@@ -40,11 +40,6 @@ struct FGenotype
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 		int32 maxPertubation;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Stats")
-	TArray<float> weights;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Stats")
-	float fitness;
 
 	FGenotype()
 	//FGenotype(TArray<float> inputWeights, float inputFitness) : weights(inputWeights), fitness(inputFitness)
@@ -57,8 +52,7 @@ struct FGenotype
 		maxPertubation = 10;
 
 		
-		weights.Emplace(FMath::RandRange(0.0f, 1.0f));
-		fitness = FMath::RandRange(0.0f, 1.0f);
+	
 	}
 
 	
@@ -97,33 +91,38 @@ public:
 
     AWorthyCharacter();
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		FGenotype myStats;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USkeletalMeshComponent* MeshComp;
+
 
     void EquipWeapon();
 
     void EquipItem(FName ItemSocketLocation, AWorthyItem* NewItem);
 
 
-    void interact();
+    void Interact();
+
+	AWorthyItem* GetClosestItem();
 
     void dropWeapon();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TArray<TSubclassOf<AWorthyItem>> PlayerInventory;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory | Weapon")
     TSubclassOf<AWorthyWeapon> DefaultWeapon;
 
 
-    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Inventory | Weapon")
     AWorthyWeapon *CurrentWeapon;
 
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-    FGenotype myStats;
 
-    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats")
     int32 currentHealth;
 
     virtual float TakeDamage(float Damage, struct FDamageEvent const &DamageEvent, class AController *EventInstigator,

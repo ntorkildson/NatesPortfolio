@@ -23,7 +23,9 @@ AWorthyAICharacter::AWorthyAICharacter()
 
 	MyBrain = CreateDefaultSubobject<UNNBrainComponent>(TEXT("Brain"));
 
+	
 }
+
 
 void AWorthyAICharacter::BeginPlay()
 {
@@ -38,8 +40,10 @@ void AWorthyAICharacter::Tick(float DeltaTime)
 
 }
 
+
 void AWorthyAICharacter::UpdateBrain()
 {
+
 
 	//create input nodes
 	TArray<float> input;
@@ -51,8 +55,9 @@ void AWorthyAICharacter::UpdateBrain()
 	for every sensor we need a float returned with a value to apply to a function below.
 	its clunky...
 	*/
-	input.Emplace(AISensors());
-	input.Emplace(SideSensor());
+	input.Emplace(forwardSensor());
+	input.Emplace(leftSensor());
+	input.Emplace(rightSensor());
 
 
 
@@ -60,19 +65,19 @@ void AWorthyAICharacter::UpdateBrain()
 
 
 	//update brain with array of all inputs and get feedback
+	UE_LOG(LogTemp, Log, TEXT("Number of inputs from AICharacter: %d"), input.Num());
+
 	MyBrain->Update(input);
 
 
 	//return value for whatever function we're going to call
-	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("NN has %d inputs"), MyBrain->NeuralNetwork.Num()));
-	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Blue, FString::Printf(TEXT("inputs has %d inputs"), input.Num()));
-	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Yellow, FString::Printf(TEXT("NNoutput has %d inputs"), NNoutput.Num()));
-	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Blue, FString::Printf(TEXT("NNoutput has %d inputs"), input.Num()));
-	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, FString::Printf(TEXT("--------------------------------------input value is: %d "), input[0]));
 
-		
+
+	UE_LOG(LogTemp, Log, TEXT("forward value is: %f"), input[0]);
+	UE_LOG(LogTemp, Log, TEXT("right value is: %f"), input[1]);
+
 		MoveForward(input[0]);
-		MoveRight(input[1]);
+		MoveRight(input[1]); //SetActorRotation((input *2 -1)+ ActorRotation.Z )
 		//Onfire
 		//MoveLeft
 		//MoveBackwards
@@ -82,17 +87,13 @@ void AWorthyAICharacter::UpdateBrain()
 		//run away
 
 		//
-	
-
-
-
-
-
 
 
 }
 
-float AWorthyAICharacter::AISensors()
+
+
+float AWorthyAICharacter::forwardSensor()
 {
 	//trace towards current movement direction
 	//start trace variables
@@ -118,24 +119,24 @@ float AWorthyAICharacter::AISensors()
 	{
 		//debug line
 	//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Hit"));
-		MyBrain->IncrementFItness(4);
+		MyBrain->IncrementFItness(1);
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("TESTING"));
 
-		return (GetActorLocation() - myHitResult.Actor->GetActorLocation()).Size();
+		return (GetActorLocation() - myHitResult.Actor->GetActorLocation()).Size() *-1;
 
 
 	}
 	else
 	{
-		MyBrain->DecrementFitness(1);
-		return 0;
+		MyBrain->DecrementFitness(10);
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
+
+		return 1;
 	}
 }
 
-
-
-
-
-float AWorthyAICharacter::SideSensor()
+float AWorthyAICharacter::leftSensor()
 {
 	//trace towards current movement direction
 	//start trace variables
@@ -148,34 +149,78 @@ float AWorthyAICharacter::SideSensor()
 
 	ActorRotation = GetActorRotation();
 
+	FVector EndLocation = TraceStart + EndLocation.RotateAngleAxis(45, GetActorForwardVector() * 5);
 
-	FVector EndLocation = TraceStart + ActorRotation.Vector() * 1000;
+
 	//FVector EndLocation = FMath::VRandCone(TraceStart, 50) + (EyeRotatoin.Vector() + 10000);
 	FCollisionQueryParams collisionParams;
 	collisionParams.AddIgnoredActor(this);
 	collisionParams.bTraceComplex = true;
-	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Green, false, 1.f, 0, 1.0f);
+	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Red, false, 1.f, 0, 1.0f);
 
 	//check hit
 	if (GetWorld()->LineTraceSingleByChannel(myHitResult, TraceStart, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
 	{
 		//debug line
-	//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Hit"));
-		MyBrain->IncrementFItness(4);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Hit"));
+		MyBrain->IncrementFItness(1);
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
 
-		return (GetActorLocation() - myHitResult.Actor->GetActorLocation()).Size();
+		return 1;
 
 
 	}
 	else
 	{
-		MyBrain->DecrementFitness(2);
-		return 0;
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
+
+		MyBrain->DecrementFitness(20);
+		return -1;
 	}
 }
 
+float AWorthyAICharacter::rightSensor()
+{
+	//trace towards current movement direction
+		//start trace variables
+	FHitResult myHitResult;
+
+	FVector TraceStart;
+	FRotator ActorRotation;
+
+	TraceStart = GetActorLocation();
+
+	ActorRotation = GetActorRotation();
+
+	FVector EndLocation = TraceStart + EndLocation.RotateAngleAxis(-45, GetActorForwardVector() * 5);
 
 
+	//FVector EndLocation = FMath::VRandCone(TraceStart, 50) + (EyeRotatoin.Vector() + 10000);
+	FCollisionQueryParams collisionParams;
+	collisionParams.AddIgnoredActor(this);
+	collisionParams.bTraceComplex = true;
+	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Red, false, 1.f, 0, 1.0f);
+
+	//check hit
+	if (GetWorld()->LineTraceSingleByChannel(myHitResult, TraceStart, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
+	{
+		//debug line
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Hit"));
+		MyBrain->IncrementFItness(1);
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
+
+		return 1;
+
+
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("current fitness is: %d"), MyBrain->Fitness);
+
+		MyBrain->DecrementFitness(20);
+		return -1;
+	}
+}
 
 
 

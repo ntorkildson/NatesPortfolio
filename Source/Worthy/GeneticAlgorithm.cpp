@@ -76,6 +76,14 @@ TArray<FGenotype> AGeneticAlgorithm::Epoch(AWorthyAICharacter &Dad, AWorthyAICha
 {
 
 	//old population
+	//for population.size
+		//grab two parents from population
+		//remove them from the index
+		//breed them together/ crossover
+		
+		//mutate child
+		//spawn child
+
 	
 
 	//store new chromosomes

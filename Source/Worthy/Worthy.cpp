@@ -5,3 +5,5 @@
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, Worthy, "Worthy" );
  
+
+//DEFINTE_LOG_CATEGORY(NeuralNetLog);

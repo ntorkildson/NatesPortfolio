@@ -20,11 +20,15 @@ struct FNeuron
 
 	FNeuron();
 	
-	FNeuron(int32 numInputs)
+	FNeuron(int32 numInputs) : inputs(numInputs)
 	{
+		inputs = numInputs;
 		for (int32 i = 0; i < numInputs + 1; i++)
 		{
-			weights.Emplace(FMath::RandRange(0.0f, 1.0f));
+			float test = (FMath::RandRange(0.0f, 1.0f));
+			UE_LOG(LogTemp, Error, TEXT("--------------------weights are  : %f"), test);
+
+			weights.Emplace(test);
 		}
 	}
 
@@ -48,10 +52,15 @@ struct FNeuronLayer
 		int32 NumInputsPerNeuron;
 
 	FNeuronLayer();
-	FNeuronLayer(int32 NumNeurons_, int32 NumInputsPerNeuron_)
+	FNeuronLayer(int32 NumNeurons_, int32 NumInputsPerNeuron_) : NumNeurons(NumNeurons_), NumInputsPerNeuron(NumInputsPerNeuron_)
 	{
+		NumNeurons = NumNeurons_;
+		NumInputsPerNeuron = NumInputsPerNeuron_;
 		for (int32 i = 0; i < NumNeurons_; i++)
 		{
+			UE_LOG(LogTemp, Log, TEXT("NumberNeurons_ : %d"), NumNeurons_);
+			UE_LOG(LogTemp, Log, TEXT("NumInputsPerNeuron_ %d"), NumInputsPerNeuron_);
+
 			VecNeurons.Emplace(FNeuron(NumInputsPerNeuron_));
 		}
 	}
@@ -83,18 +92,17 @@ public:
 
 	//building an actual NN that gets played with by a GA
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	int32 NumberOfInputs;
+	int32 NumberOfInputs=1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	int32 NumberOfOutputs;
+	int32 NumberOfOutputs=1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	int32 NumberOfHiddenLayers;
+	int32 NumberOfHiddenLayers = 15;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	int32 NeuronsPerHiddenLayer;
+	int32 NeuronsPerHiddenLayer=15;
 
-	UPROPERTY(BlueprintReadOnly,Category = "Neural Network")
 	TArray<FNeuronLayer> NeuralNetwork;
 
 	void CreateNetwork();
@@ -121,10 +129,10 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	float Bias;
+	float Bias = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neural Network")
-	float activationResponse;
+	float activationResponse = -1.0f;
 
 	void RunSimulation();
 
