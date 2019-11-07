@@ -10,7 +10,8 @@
 
 void AWorthyWeapon::ApplyWeaponConfig(FWeaponData &weaponInfo)
 {
-    weaponInfo = WeaponStats;
+	weaponInfo = WeaponStats ;
+
 }
 
 // Sets default values
@@ -60,10 +61,12 @@ void AWorthyWeapon::PlayEffects()
         UAnimInstance *AnimInstance = ItemMesh->GetAnimInstance();
         if (AnimInstance != NULL)
         {
+			//TODO: make this refrence owner and have owner play animation
             AnimInstance->Montage_Play(FireAnimation, 1.f);
         }
     }
 }
+
 
 void AWorthyWeapon::OnFire()
 {
@@ -71,9 +74,9 @@ void AWorthyWeapon::OnFire()
 	{
 		ServerFire();
 	}
-	if (!bIsFIring)
+	if (!bIsFiring)
 	{
-		bIsFIring = true;
+		bIsFiring = true;
 
 		WeaponTimer();
 	}
@@ -104,12 +107,16 @@ void AWorthyWeapon::ServerStopFire_Implementation()
 
 void AWorthyWeapon::ResetWeapon()
 {
-//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Silver, (TEXT("Reset")));
 
-    //reset all the firing variables and allow shooting to start again
-    GetWorld()->GetTimerManager().ClearTimer(BurstTimerHandle);
-    GetWorld()->GetTimerManager().ClearTimer(SafeFireHandle);
-    bIsFIring = false;
+//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Silver, (TEXT("Reset")));
+    if(UWorld* World = GetWorld())
+    {
+        //reset all the firing variables and allow shooting to start again
+        GetWorld()->GetTimerManager().ClearTimer(BurstTimerHandle);
+        GetWorld()->GetTimerManager().ClearTimer(SafeFireHandle);
+    }
+    bIsFiring = false;
+
 
 }
 
@@ -137,8 +144,6 @@ void AWorthyWeapon::OnEquip()
 	
 }
 
-
-
 void AWorthyWeapon::FireProjectile()
 {
 	if (Role == ROLE_Authority)
@@ -163,7 +168,7 @@ void AWorthyWeapon::FireProjectile()
 				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 				// spawn the projectile at the muzzle, buckshot firing
-				for (int32 i = 0; i < numberOfProjectiles; i++)
+				for (int32 i = 0; i < NumberOfProjectiles; i++)
 				{
 					LastFireTime = GetWorld()->GetTimeSeconds();
 
@@ -200,7 +205,6 @@ void AWorthyWeapon::FireProjectile()
 
 }
 
-
 void AWorthyWeapon::FireTrace()
 {
 	if (Role == ROLE_Authority && bCanFire)
@@ -209,20 +213,20 @@ void AWorthyWeapon::FireTrace()
 
 		if (MyOwner)
 		{
-			//start trace variables
-			FHitResult myHitResult;
+
 			//FVector EyeLocation = MyOwner->GetActorLocation();
 			//const FRotator EyeRotation = GetOwner()->GetInstigatorController()->GetControlRotation();
 
 			FVector EyeLocation;
 			FRotator EyeRotation;
 
-			MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);  
-			
 			EyeRotation = GetOwner()->GetActorRotation();
 
+			MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);  
+			
+			
 
-			FVector EndLocation = EyeLocation + EyeRotation.Vector() * 1000;
+			FVector EndLocation = EyeLocation + EyeRotation.Vector() * WeaponRange;
 			//FVector EndLocation = FMath::VRandCone(EyeLocation, 50) + (EyeRotatoin.Vector() + 10000);
 			FCollisionQueryParams collisionParams;
 			collisionParams.AddIgnoredActor(MyOwner);
@@ -230,25 +234,31 @@ void AWorthyWeapon::FireTrace()
 			collisionParams.bTraceComplex = true;
 			DrawDebugLine(GetWorld(), EyeLocation, EndLocation, FColor::Red, false, 1.f, 0, 1.0f);
 
+			//start trace variables
+            FHitResult myHitResult;
 			//check hit
 			if (GetWorld()->LineTraceSingleByChannel(myHitResult, EyeLocation, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
 			{
 				//debug line
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("firing"));
+				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("firing"));
 
 				//deal damage/physics/effects/etc.
 
 			}
+
 
 			useAmmo();
 			PlayEffects();
 
 			//
 		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("No Owner!"));
+
+		}
 	}
 }
-
-
 
 void AWorthyWeapon::ServerFire_Implementation()
 {
@@ -263,7 +273,7 @@ bool AWorthyWeapon::ServerFire_Validate()
 void AWorthyWeapon::WeaponTimer()
 {
 
-    if (bIsFIring == true)
+    if (bIsFiring == true)
     {
 
         //GetWorld()->GetTimerManager().SetTimer(BurstTimerHandle, this, &AWorthyWeapon::FireProjectile,TimeBetweenShots,true);

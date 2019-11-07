@@ -30,7 +30,10 @@ AWorthyAICharacter::AWorthyAICharacter()
 void AWorthyAICharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	MyBrain->CreateNetwork();
+	if (MyBrain != nullptr && GetWorld())
+	{
+		MyBrain->CreateNetwork();
+	}
 }
 
 

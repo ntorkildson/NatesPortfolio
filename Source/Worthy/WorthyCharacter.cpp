@@ -18,6 +18,8 @@
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
+#include "WeaponLocker.h"
+
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -43,6 +45,7 @@ AWorthyCharacter::AWorthyCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -55,8 +58,9 @@ AWorthyCharacter::AWorthyCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-}
+	PrimaryActorTick.bCanEverTick = true;
 
+}
 
 void AWorthyCharacter::BeginPlay()
 {
@@ -67,7 +71,8 @@ void AWorthyCharacter::BeginPlay()
 	//FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
     if (Role == ROLE_Authority)
     {
-       // EquipWeapon();
+		FName SocketName = TEXT("GripPoint");
+        EquipItem(SocketName, DefaultWeapon);
     }
 
     //Mesh1P->SetHiddenInGame(false, false);
@@ -77,10 +82,10 @@ void AWorthyCharacter::BeginPlay()
 void AWorthyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}
 
-//////////////////////////////////////////////////////////////////////////
-// Input
+	//TODO: setup a trace function to highlight objects that are usable(weapn lockers)
+	
+}
 
 void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -91,16 +96,20 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	//Bind Crouching
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AWorthyCharacter::BeginCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AWorthyCharacter::EndCrouch);
+
+
 	// Bind fire event
     PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AWorthyCharacter::OnFire);
     PlayerInputComponent->BindAction("Fire", IE_Released, this, &AWorthyCharacter::StopFire);
 
 
-    PlayerInputComponent->BindAction("Drop", IE_Released, this, &AWorthyCharacter::dropWeapon);
+    PlayerInputComponent->BindAction("Drop", IE_Released, this, &AWorthyCharacter::DropWeapon);
     PlayerInputComponent->BindAction("Interact", IE_Released, this, &AWorthyCharacter::Interact);
 
 
-    PlayerInputComponent->BindAction("Spawn", IE_Released, this, &AWorthyCharacter::EquipWeapon);
 
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
@@ -119,7 +128,6 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AWorthyCharacter::LookUpAtRate);
 }
-
 
 void AWorthyCharacter::OnResetVR()
 {
@@ -151,44 +159,6 @@ void AWorthyCharacter::EndTouch(const ETouchIndex::Type FingerIndex, const FVect
 	TouchItem.bIsPressed = false;
 }
 
-//Commenting this section out to be consistent with FPS BP template.
-//This allows the user to turn without using the right virtual joystick
-
-//void AWorthyCharacter::TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location)
-//{
-//	if ((TouchItem.bIsPressed == true) && (TouchItem.FingerIndex == FingerIndex))
-//	{
-//		if (TouchItem.bIsPressed)
-//		{
-//			if (GetWorld() != nullptr)
-//			{
-//				UGameViewportClient* ViewportClient = GetWorld()->GetGameViewport();
-//				if (ViewportClient != nullptr)
-//				{
-//					FVector MoveDelta = Location - TouchItem.Location;
-//					FVector2D ScreenSize;
-//					ViewportClient->GetViewportSize(ScreenSize);
-//					FVector2D ScaledDelta = FVector2D(MoveDelta.X, MoveDelta.Y) / ScreenSize;
-//					if (FMath::Abs(ScaledDelta.X) >= 4.0 / ScreenSize.X)
-//					{
-//						TouchItem.bMoved = true;
-//						float Value = ScaledDelta.X * BaseTurnRate;
-//						AddControllerYawInput(Value);
-//					}
-//					if (FMath::Abs(ScaledDelta.Y) >= 4.0 / ScreenSize.Y)
-//					{
-//						TouchItem.bMoved = true;
-//						float Value = ScaledDelta.Y * BaseTurnRate;
-//						AddControllerPitchInput(Value);
-//					}
-//					TouchItem.Location = Location;
-//				}
-//				TouchItem.Location = Location;
-//			}
-//		}
-//	}
-//}
-
 void AWorthyCharacter::MoveForward(float Value)
 {
 	if (Value != 0.0f)
@@ -219,6 +189,16 @@ void AWorthyCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AWorthyCharacter::BeginCrouch()
+{
+	Crouch();
+}
+
+void AWorthyCharacter::EndCrouch()
+{
+	UnCrouch();
+}
+
 bool AWorthyCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerInputComponent)
 {
 	if (FPlatformMisc::SupportsTouchInput() || GetDefault<UInputSettings>()->bUseMouseForTouch)
@@ -234,31 +214,72 @@ bool AWorthyCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerIn
 	return false;
 }
 
-void AWorthyCharacter::EquipWeapon()
+
+void AWorthyCharacter::EquipItem(FName ItemSocketLocation, TSubclassOf<AWorthyItem> ItemToSpawn)
 {
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	if (GetWorld())
+	{
+		//TODO: make spawning server only
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		FTransform SpawnTransform;
 
-    FVector derp = GetMesh()->GetSocketLocation(TEXT("GripPoint"));
-   FRotator meshROt = GetMesh()->GetSocketRotation(TEXT("GripPoint"));
-
-    CurrentWeapon = GetWorld()->SpawnActor<AWorthyWeapon>(DefaultWeapon, derp, meshROt, SpawnParams);
-
-	
-    CurrentWeapon->SetOwner(this);
-    CurrentWeapon->Instigator = this;
-    //CurrentWeapon->AttachToActor(, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
-//	CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
+		FVector SpawnLocation = GetMesh()->GetSocketLocation(ItemSocketLocation);
+		FRotator SpawnRotation = GetMesh()->GetSocketRotation(ItemSocketLocation);
 
 
+		AWorthyItem * NewItem = GetWorld()->SpawnActor<AWorthyItem>(ItemToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
+		NewItem->SetOwner(this);
 
+		if (NewItem->IsA(AWorthyWeapon::StaticClass()))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Weapon cast successful, attach to current weapon"));
+			CurrentWeapon = Cast<AWorthyWeapon>(NewItem);
+			
+		
+
+			CurrentWeapon->AttachToComponent(GetMesh(),  FAttachmentTransformRules::SnapToTargetIncludingScale, ItemSocketLocation);
+			
+			CurrentWeapon->SetOwner(this);
+			CurrentWeapon->Instigator = this;
+			
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Just an item and should be equipped someplace else"));
+		}
+
+
+
+
+		
+		//CurrentWeapon = GetWorld()->SpawnActor<AWorthyItem>(NewItem, SpawnLocation, SpawnRotation, SpawnParams);
+
+		//CurrentWeapon->AttachToActor(, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("GripPoint"));
+	    //	CurrentWeapon->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("GripPoint"));
+		
+	}
 }
 
 
-void AWorthyCharacter::dropWeapon()
+void AWorthyCharacter::DropWeapon()
 {
-    CurrentWeapon->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+	if (GetWorld())
+	{
+		if (CurrentWeapon)
+		{
+			
+			CurrentWeapon->DropItem();
+			CurrentWeapon = nullptr;
+			if (CurrentWeapon)
+			{
+				UE_LOG(LogTemp, Error, TEXT("WE DESTROYED YOU WHY AREE YOU HERE"));
+
+			}
+		}
+	}
 }
+
 
 void AWorthyCharacter::Interact()
 {
@@ -268,54 +289,72 @@ void AWorthyCharacter::Interact()
 	//do whatever its supposed to do
 
 	if (Role == ROLE_Authority)
-	{
-		AActor* MyOwner = GetOwner();
+	{	
+		AWeaponLocker* FoundItem = GetClosestItem();
+		if (FoundItem)
+		{
+			
 
-	
-			//start trace variables
-			FHitResult myHitResult;
+			UE_LOG(LogTemp, Log, TEXT("Item FOund"));
 
-			FVector EyeLocation;
-			FRotator EyeRotation;
+			FoundItem->InteractWith(this);
 
-			//GetActorEyesViewPoint(EyeLocation, EyeRotation);
-
-			EyeRotation = FollowCamera->GetComponentRotation();
-
-
-			EyeLocation = FollowCamera->GetComponentLocation();
-
-			FVector EndLocation = EyeLocation + EyeRotation.Vector() * 1000;
-
-			FCollisionQueryParams collisionParams;
-			collisionParams.AddIgnoredActor(MyOwner);
-			collisionParams.AddIgnoredActor(this);
-			collisionParams.bTraceComplex = true;
-			DrawDebugLine(GetWorld(), EyeLocation, EndLocation, FColor::Silver, false, 1.f, 0, 1.0f);
-			UE_LOG(LogTemp, Log, TEXT("Trace for object"));
-
-			//check hit
-			if (GetWorld()->LineTraceSingleByChannel(myHitResult, EyeLocation, EndLocation, ECollisionChannel::ECC_WorldDynamic, collisionParams))
-			{
-				//debug line
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("we found a toy"));
-				Cast<AWorthyItem>(myHitResult.GetActor());
-
-
-			}
+		}
 
 		
 	}
 }
 
+AWeaponLocker* AWorthyCharacter::GetClosestItem()
+{
+	AActor* MyOwner = GetOwner();
 
+
+	//start trace variables
+	FHitResult myHitResult;
+
+	FVector EyeLocation;
+	FRotator EyeRotation;
+
+	EyeRotation = FollowCamera->GetComponentRotation();
+	EyeLocation = FollowCamera->GetComponentLocation();
+
+	FVector EndLocation = EyeLocation + EyeRotation.Vector() * 1000;
+
+	FCollisionQueryParams collisionParams;
+	collisionParams.AddIgnoredActor(MyOwner);
+	collisionParams.AddIgnoredActor(this);
+	collisionParams.bTraceComplex = true;
+
+	DrawDebugLine(GetWorld(), EyeLocation, EndLocation, FColor::Silver, false, 1.f, 0, 1.0f);
+	UE_LOG(LogTemp, Log, TEXT("Trace for object"));
+
+	//check hit
+	if (GetWorld()->LineTraceSingleByChannel(myHitResult, EyeLocation, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
+	{
+		return	Cast<AWeaponLocker>(myHitResult.GetActor());
+
+
+	}
+	else
+		return nullptr;
+}
 
 void AWorthyCharacter::OnFire()
 {
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->OnFire();
-    }
+	if (CurrentWeapon)
+	{
+		//allows firing/swinging/whatever animations to be stored in the weapon and we dont have to setup a bunch of animation decisions
+		CurrentWeapon->FireAnimation;
+		UAnimationAsset* FireAnimation = CurrentWeapon->FireAnimation;
+		if (FireAnimation)
+		{
+			GetMesh()->PlayAnimation(FireAnimation, false);
+		}
+
+		CurrentWeapon->OnFire();
+	}
+	
 
 
 }
@@ -340,8 +379,6 @@ void AWorthyCharacter::StopFire()
 
 }
 
-
-
 float
 AWorthyCharacter::TakeDamage(float Damage, struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
                              class AActor *DamageCauser)
@@ -349,25 +386,6 @@ AWorthyCharacter::TakeDamage(float Damage, struct FDamageEvent const &DamageEven
     //TODO: resist and damage reduction algorithm goes here.
     currentHealth -= Damage;
     return currentHealth;
-}
-
-void AWorthyCharacter::EquipItem(FName ItemSocketLocation, AWorthyItem *NewItem)
-{
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-//    FVector itemLocation = GetMesh1P()->GetSocketLocation(ItemSocketLocation);
- //   FRotator itemRotation = GetMesh1P()->GetSocketRotation(ItemSocketLocation);
-
-
-    if (NewItem)
-    {
-        NewItem->SetOwner(this);
-        NewItem->Instigator = this;
-        NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ItemSocketLocation);
-        NewItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, ItemSocketLocation);
-
-    }
 }
 
 void AWorthyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
@@ -379,4 +397,5 @@ void AWorthyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &Out
     DOREPLIFETIME(AWorthyCharacter, currentHealth);
 
 }	
+
 

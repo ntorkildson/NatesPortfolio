@@ -59,10 +59,15 @@ void AWorthyAISpawner::SpawnAIClass()
 			
 			//GA stats created
 			
+		if (NewActor)
+		{
+			FullPopulation.Emplace(NewActor);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("AWorthyAISpawner::SpawnAIClass(): Actor was not spawned!"));
 
-		NewActor->myStats;
-		FullPopulation.Emplace(NewActor);
-
+		}
 	}
 }
 

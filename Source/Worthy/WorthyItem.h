@@ -4,42 +4,36 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
 #include "WorthyItem.generated.h"
 
-UENUM(BlueprintType)
-enum class EItemRarity : uint8
-{
-    scrap    UMETA(DisplayName = "scrap"),
-    normal    UMETA(DisplayName = "normal"),
-    magic    UMETA(DisplayName = "magic"),
-    rare    UMETA(DisplayName = "rare"),
-    unique    UMETA(DisplayName = "unique"),
-    legendary	UMETA(DisplayName = "legendary"),
-
-};
 
 
 USTRUCT(BlueprintType)
 struct FItemStats
 {
-    GENERATED_USTRUCT_BODY()
+	//GENERATED_USTRUCT_BODY()
+		GENERATED_BODY()
 
-    UPROPERTY(EditDefaultsOnly, Category="ItemModifier")
-    int32 DexModifier;
+		UPROPERTY(EditDefaultsOnly, Category = "ItemStats|ItemModifier")
+		int32 DexModifier;
 
-    UPROPERTY(EditDefaultsOnly, Category="ItemModifier")
-    int32 StrModifier;
+	UPROPERTY(EditDefaultsOnly, Category = "ItemStats|ItemModifier")
+		int32 StrModifier;
 
-    UPROPERTY(EditDefaultsOnly, Category="ItemModifier")
-    int32 IntModifier;
+	UPROPERTY(EditDefaultsOnly, Category = "ItemStats|ItemModifier")
+		int32 IntModifier;
 
-    FItemStats()
-    {
-        DexModifier  = 0;
-        StrModifier = 0;
-        IntModifier = 0;
+	UPROPERTY(EditDefaultsOnly, Category = "ItemStats")
+		FName ItemSocketName;
 
-    }
+	FItemStats()
+	{
+		DexModifier = 0;
+		StrModifier = 0;
+		IntModifier = 0;
+		ItemSocketName = TEXT("WeaponGrip");
+	}
 
 };
 
@@ -47,26 +41,23 @@ UCLASS()
 class WORTHY_API AWorthyItem : public AActor
 {
 	GENERATED_BODY()
-	
+
+
+
+
 public:
+	// Sets default values for this actor's properties
+	AWorthyItem();
 
 UPROPERTY(EditDefaultsOnly, Category = "ItemStats")
 USkeletalMeshComponent* ItemMesh;
 
-
+//TODO: See if we can make this more automated.
 UPROPERTY(EditDefaultsOnly, Category = "ItemStats")
-FName ItemSocketName;
-	// Sets default values for this actor's properties
-	AWorthyItem();
-
-UPROPERTY(VisibleDefaultsOnly, Category = "ItemStats")
-int32 someRandomVarialbe;
+TSubclassOf<class AWeaponLocker> WeaponLockerClass;
 
 UPROPERTY(EditDefaultsOnly, Category="ItemStats")
 FItemStats ItemStats;
-
-UPROPERTY(EditDefaultsOnly, Category ="ItemStats")
-EItemRarity ItemRarity;
 
 
 
@@ -81,19 +72,14 @@ public:
 	FName AttachPoint;
 
 
-	void UpdateStats();
-
-
 	//when Item is hit by a trace, despawn and add to inventory
-	void PickupItem();
-
-	void EquipItem(FName SocketName); //Equips Item to the corresponding Socket, socket is also relative to attach point(helment, chest artmor, etc)
+	virtual void UseItem();
 
 	void UnEquipItem(); //Unequips the item and places it in the inventory
 
 	void DropItem(); // takes item in inventory, spawns it and drops it on the ground.
 
-
+	void InitializeDroppedItem();
 
 
 

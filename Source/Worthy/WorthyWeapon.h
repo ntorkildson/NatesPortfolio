@@ -23,9 +23,6 @@ enum class EProjectileMods : uint8
 
 };
 
-
-
-
 USTRUCT(BlueprintType) //TODO: make this useful
 struct FWeaponData
 {
@@ -80,21 +77,63 @@ UCLASS()
 class WORTHY_API AWorthyWeapon : public AWorthyItem
 {
 	GENERATED_BODY()
-/** Gun mesh: 1st person view (seen only by self) 
 
-*/
 public:
+
+	AWorthyWeapon();
 
     /** Location on gun mesh where projectiles should spawn. */
     UPROPERTY(VisibleDefaultsOnly, Category = "ItemStats|WeaponStats")
     class USceneComponent *FP_MuzzleLocation;
 
-    //applies all the stats to the projectile
-    void ApplyWeaponConfig(FWeaponData &weaponInfo);
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    FWeaponData WeaponStats;
 
-public:	
-	// Sets default values for this actor's properties
-	AWorthyWeapon();
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    int32 currentAmmo;
+
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    int32 maxAmmo;
+
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    int32 currentClips;
+
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    int32 maxClips;
+
+    void useAmmo();
+
+    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+    int32 NumberOfBurst = 1;
+
+    /** Gun muzzle's offset from the characters location */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
+    FVector GunOffset;
+
+    /** Projectile class to spawn */
+    UPROPERTY(EditDefaultsOnly, Category = Projectile)
+    TSubclassOf<class AWorthyProjectile> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+		int32 NumberOfProjectiles;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
+    float TimeBetweenShots = 0.1f;  //time between each shot fired
+
+    /** AnimMontage to play each time we fire */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
+    class UAnimMontage *FireAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
+	class USoundBase *FireSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+		int32 WeaponRange;
+
+
+	//assigns projectile stats
+	void ApplyWeaponConfig(FWeaponData &weaponInfo);
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -106,23 +145,28 @@ public:
 
     void StopFire();
 
-    /***Weapon Stuffs*/
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
-    int32 numberOfProjectiles = 1;
 
     /** Fires a projectile. */
     void OnFire();
 
+protected:
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerFire();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerStopFire();
+
+public:
     void ResetWeapon();
 
     void WeaponTimer();
 
-    bool bIsFIring = false;
+    bool bIsFiring = false;
 
 	bool bCanFire = true;
 
-UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
-    float TimeBetweenShots = 0.1f;  //time between each shot fired
+
 
 
     FTimerHandle BurstTimerHandle;  // shot timer
@@ -135,43 +179,7 @@ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
 
     bool bIsBursting;
 
-    UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    FWeaponData WeaponStats;
-
-UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    int32 currentAmmo;
-
-UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    int32 maxAmmo;
-
-UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    int32 currentClips;
-
-UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    int32 maxClips;
-
-    void useAmmo();
-
-UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
-    int32 NumberOfBurst = 1;
-
-    /** Gun muzzle's offset from the characters location */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-    FVector GunOffset;
-
-    /** Projectile class to spawn */
-    UPROPERTY(EditDefaultsOnly, Category = Projectile)
-    TSubclassOf<class AWorthyProjectile> ProjectileClass;
-
-    /** Sound to play each time we fire */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-
-    class USoundBase *FireSound;
-
-    /** AnimMontage to play each time we fire */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-    class UAnimMontage *FireAnimation;
-
+	   
 	void OnEquip();
 
 
@@ -185,12 +193,6 @@ protected:
 
 	void FireTrace();
 
-    UFUNCTION(Server, Reliable, WithValidation)
 
-    void ServerFire();
-
-    UFUNCTION(Server, Reliable, WithValidation)
-
-    void ServerStopFire();
 
 };

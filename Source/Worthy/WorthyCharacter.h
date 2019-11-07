@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "WorthyItem.h"
+#include "WeaponLocker.h"
 #include "WorthyCharacter.generated.h"
 
 
@@ -13,7 +15,7 @@ class AWorthyWeapon;
 
 class AWorthyItem;
 
-
+class AWeaponLocker;
 
 //Genotypes are basically just whatever stats we want to the actor to have.
 USTRUCT(BlueprintType)
@@ -98,28 +100,25 @@ public:
 		USkeletalMeshComponent* MeshComp;
 
 
-    void EquipWeapon();
-
-    void EquipItem(FName ItemSocketLocation, AWorthyItem* NewItem);
+	void EquipItem(FName ItemSocketLocation, TSubclassOf<AWorthyItem> ItemToSpawn);
 
 
     void Interact();
 
-	AWorthyItem* GetClosestItem();
+	AWeaponLocker* GetClosestItem();
 
     void dropWeapon();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
-	TArray<TSubclassOf<AWorthyItem>> PlayerInventory;
+	TArray<FItemInformation> PlayerInventory;
+
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory | Weapon")
-    TSubclassOf<AWorthyWeapon> DefaultWeapon;
+    TSubclassOf<AWorthyItem> DefaultWeapon;
 
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Inventory | Weapon")
-    AWorthyWeapon *CurrentWeapon;
-
-
+     AWorthyWeapon* CurrentWeapon;
 
 
     UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats")
@@ -136,6 +135,7 @@ public:
     void TakeDamage();
 
     void CheckResistances();
+
 
 
 
@@ -190,6 +190,13 @@ protected:
      */
     void LookUpAtRate(float Rate);
 
+
+	void BeginCrouch();
+
+	void EndCrouch();
+
+
+
     struct TouchData
     {
         TouchData()
@@ -229,6 +236,9 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	FORCEINLINE bool GetCurrentWeapon() {		return CurrentWeapon != nullptr; }
+
 
 };
 
