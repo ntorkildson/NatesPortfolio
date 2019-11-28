@@ -96,6 +96,11 @@ void AWorthyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	//bind sprinting
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AWorthyCharacter::StartSprinting);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AWorthyCharacter::StopSprinting);
+
+
 	//Bind Crouching
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AWorthyCharacter::BeginCrouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AWorthyCharacter::EndCrouch);
@@ -197,6 +202,16 @@ void AWorthyCharacter::BeginCrouch()
 void AWorthyCharacter::EndCrouch()
 {
 	UnCrouch();
+}
+
+void AWorthyCharacter::StartSprinting()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 1200;
+}
+
+void AWorthyCharacter::StopSprinting()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600;
 }
 
 bool AWorthyCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerInputComponent)
@@ -342,22 +357,31 @@ AWeaponLocker* AWorthyCharacter::GetClosestItem()
 
 void AWorthyCharacter::OnFire()
 {
-	if (CurrentWeapon)
+
+
+	if (CurrentWeapon && CurrentWeapon->bCanFire == true)
 	{
 		//allows firing/swinging/whatever animations to be stored in the weapon and we dont have to setup a bunch of animation decisions
-		CurrentWeapon->FireAnimation;
-		UAnimationAsset* FireAnimation = CurrentWeapon->FireAnimation;
-		if (FireAnimation)
+		auto AnimationsToPlay = CurrentWeapon->CombatAnimation;
+
+		if (AnimationsToPlay != nullptr)
 		{
-			GetMesh()->PlayAnimation(FireAnimation, false);
+			
+				PlayAnimMontage(AnimationsToPlay, 1.0, TEXT("None"));
+				CurrentWeapon->attackSequence = 2;
+			
+
+
 		}
 
 		CurrentWeapon->OnFire();
 	}
-	
-
 
 }
+
+
+
+
 
 bool AWorthyCharacter::ServerFire_Validate()
 {

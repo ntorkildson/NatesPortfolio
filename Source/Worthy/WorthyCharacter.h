@@ -107,7 +107,7 @@ public:
 
 	AWeaponLocker* GetClosestItem();
 
-    void dropWeapon();
+    void DropWeapon();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TArray<FItemInformation> PlayerInventory;
@@ -162,11 +162,13 @@ public:
 
 protected:
 
-    /** Fires a projectile. */
+    /** Fires current weapon. */
     void OnFire();
 
     //plays firing effects
     void PlayEffects();
+
+	void MeleeCombat();
 
 
     /** Resets HMD orientation and position in VR. */
@@ -194,6 +196,10 @@ protected:
 	void BeginCrouch();
 
 	void EndCrouch();
+
+	void StartSprinting();
+
+	void StopSprinting();
 
 
 

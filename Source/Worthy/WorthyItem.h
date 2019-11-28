@@ -37,6 +37,7 @@ struct FItemStats
 
 };
 
+
 UCLASS()
 class WORTHY_API AWorthyItem : public AActor
 {
@@ -77,7 +78,7 @@ public:
 
 	void UnEquipItem(); //Unequips the item and places it in the inventory
 
-	void DropItem(); // takes item in inventory, spawns it and drops it on the ground.
+	virtual void DropItem(); // takes item in inventory, spawns it and drops it on the ground.
 
 	void InitializeDroppedItem();
 

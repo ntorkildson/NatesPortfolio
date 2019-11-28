@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
+
 void AWorthyWeapon::ApplyWeaponConfig(FWeaponData &weaponInfo)
 {
 	weaponInfo = WeaponStats ;
@@ -34,7 +35,18 @@ AWorthyWeapon::AWorthyWeapon()
 void AWorthyWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+	float AnimationLength = CombatAnimation->SequenceLength;
 
+	if (AnimationLength > TimeBetweenShots )
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15, FColor::Yellow, TEXT("Time between shots is to slow"));
+
+		TimeBetweenShots = AnimationLength;
+	}
+	else if (TimeBetweenShots > AnimationLength)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15, FColor::Yellow, TEXT("Time between shots is to fast"));
+	}
 }
 
 // Called every frame
@@ -51,20 +63,11 @@ void AWorthyWeapon::PlayEffects()
     // try and play the sound if specified
     if (FireSound != NULL)
     {
+		UE_LOG(LogTemp, Warning, TEXT("weapon sound going off"));
+
         UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
     }
-
-    // try and play a firing animation if specified
-    if (FireAnimation != NULL)
-    {
-        // Get the animation object for the arms mesh
-        UAnimInstance *AnimInstance = ItemMesh->GetAnimInstance();
-        if (AnimInstance != NULL)
-        {
-			//TODO: make this refrence owner and have owner play animation
-            AnimInstance->Montage_Play(FireAnimation, 1.f);
-        }
-    }
+		
 }
 
 
@@ -74,10 +77,11 @@ void AWorthyWeapon::OnFire()
 	{
 		ServerFire();
 	}
-	if (!bIsFiring)
+	if (!bIsFiring && bCanFire == true)
 	{
-		bIsFiring = true;
+		UE_LOG(LogTemp, Warning, TEXT("OnFire-> WeaponTimer()"));
 
+		bIsFiring = true;
 		WeaponTimer();
 	}
 }
@@ -85,14 +89,17 @@ void AWorthyWeapon::OnFire()
 void AWorthyWeapon::StopFire()
 {
     //start a timer to allow firing again -disallows left click spamming
-    if (Role < ROLE_Authority)
+	if (Role < ROLE_Authority && bCanFire == true)
     {
         ServerStopFire();
     }
+	float weaponResetTimer = TimeBetweenShots * NumShots + 1;
+
     GetWorld()->GetTimerManager().SetTimer(SafeFireHandle, this, &AWorthyWeapon::ResetWeapon,
-                                           (TimeBetweenShots) * NumberOfBurst, true);
+		weaponResetTimer, true);
 
 }
+
 
 bool AWorthyWeapon::ServerStopFire_Validate()
 {
@@ -108,12 +115,15 @@ void AWorthyWeapon::ServerStopFire_Implementation()
 void AWorthyWeapon::ResetWeapon()
 {
 
-//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Silver, (TEXT("Reset")));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Silver, (TEXT("Reset")));
     if(UWorld* World = GetWorld())
     {
+		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Blue, TEXT("Restting weapon now"));
         //reset all the firing variables and allow shooting to start again
         GetWorld()->GetTimerManager().ClearTimer(BurstTimerHandle);
         GetWorld()->GetTimerManager().ClearTimer(SafeFireHandle);
+		bCanFire = true;
+		attackSequence = 0;
     }
     bIsFiring = false;
 
@@ -207,50 +217,49 @@ void AWorthyWeapon::FireProjectile()
 
 void AWorthyWeapon::FireTrace()
 {
-	if (Role == ROLE_Authority && bCanFire)
+	if (Role == ROLE_Authority )
 	{
-		AActor* MyOwner = GetOwner();
 
+		AActor* MyOwner = GetOwner();
 		if (MyOwner)
 		{
+			useAmmo();
 
-			//FVector EyeLocation = MyOwner->GetActorLocation();
-			//const FRotator EyeRotation = GetOwner()->GetInstigatorController()->GetControlRotation();
-
-			FVector EyeLocation;
-			FRotator EyeRotation;
-
-			EyeRotation = GetOwner()->GetActorRotation();
-
-			MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);  
-			
-			
-
-			FVector EndLocation = EyeLocation + EyeRotation.Vector() * WeaponRange;
-			//FVector EndLocation = FMath::VRandCone(EyeLocation, 50) + (EyeRotatoin.Vector() + 10000);
-			FCollisionQueryParams collisionParams;
-			collisionParams.AddIgnoredActor(MyOwner);
-			collisionParams.AddIgnoredActor(this);
-			collisionParams.bTraceComplex = true;
-			DrawDebugLine(GetWorld(), EyeLocation, EndLocation, FColor::Red, false, 1.f, 0, 1.0f);
-
-			//start trace variables
-            FHitResult myHitResult;
-			//check hit
-			if (GetWorld()->LineTraceSingleByChannel(myHitResult, EyeLocation, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
+			for (int32 i = 0;  NumShots >= i ; ++i)
 			{
-				//debug line
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("firing"));
+				FVector StartLocation;
+				FRotator EyeRotation;
 
-				//deal damage/physics/effects/etc.
+				EyeRotation = GetOwner()->GetActorRotation();
+
+				MyOwner->GetActorEyesViewPoint(StartLocation, EyeRotation);
+
+				int32 RandomSeed = FMath::Rand();
+				FRandomStream WeaponStream(RandomSeed);
+				float ConeHalfAngle = FMath::DegreesToRadians(WeaponSpread * 0.5);
+
+				FVector AimDirection =   WeaponStream.VRandCone(EyeRotation.Vector(), ConeHalfAngle);
+
+				FVector EndLocation = StartLocation + AimDirection * WeaponRange;
+				FCollisionQueryParams collisionParams;
+				collisionParams.AddIgnoredActor(MyOwner);
+				collisionParams.AddIgnoredActor(this);
+				collisionParams.bTraceComplex = true;
+
+				DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 1.f, 0, 1.0f);
+
+				//start trace variables
+				FHitResult myHitResult;
+				//check hit
+				if (GetWorld()->LineTraceSingleByChannel(myHitResult, StartLocation, EndLocation, ECollisionChannel::ECC_Visibility, collisionParams))
+				{
+					//debug line
+
+					//deal damage/physics/effects/etc.
+
+				}
 
 			}
-
-
-			useAmmo();
-			PlayEffects();
-
-			//
 		}
 		else
 		{
@@ -259,6 +268,7 @@ void AWorthyWeapon::FireTrace()
 		}
 	}
 }
+
 
 void AWorthyWeapon::ServerFire_Implementation()
 {
@@ -275,9 +285,16 @@ void AWorthyWeapon::WeaponTimer()
 
     if (bIsFiring == true)
     {
+	
 
+
+		bCanFire = false;
+		UE_LOG(LogTemp, Warning, TEXT(" WeaponTimer->FireTrace()"));
+		float weaponResetTimer = TimeBetweenShots * NumShots + 1;
         //GetWorld()->GetTimerManager().SetTimer(BurstTimerHandle, this, &AWorthyWeapon::FireProjectile,TimeBetweenShots,true);
 		GetWorld()->GetTimerManager().SetTimer(BurstTimerHandle, this, &AWorthyWeapon::FireTrace, TimeBetweenShots, true);
+		GetWorld()->GetTimerManager().SetTimer(WeaponResetHandle, this, &AWorthyWeapon::ResetWeapon, weaponResetTimer, false);
+
 
     }
 

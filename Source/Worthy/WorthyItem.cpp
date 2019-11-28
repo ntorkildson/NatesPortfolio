@@ -61,7 +61,7 @@ void AWorthyItem::DropItem()
 
 		const FVector Direction = CamRot.Vector();
 		const FVector TraceStart = GetActorLocation();
-		const FVector TraceEnd = TraceStart + Direction * 150;
+		const FVector TraceEnd = TraceStart + Direction * 10;
 
 		FCollisionQueryParams TraceParams;
 		TraceParams.bTraceComplex = false;

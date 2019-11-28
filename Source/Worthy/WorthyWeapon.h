@@ -10,6 +10,7 @@
 
 class USkeletalMeshComponent;
 
+class UAnimMontage;
 
 UENUM(BlueprintType)
 enum class EProjectileMods : uint8
@@ -106,6 +107,9 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
     int32 NumberOfBurst = 1;
 
+	UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
+		int32 NumShots = 1;
+
     /** Gun muzzle's offset from the characters location */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
     FVector GunOffset;
@@ -120,17 +124,19 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
     float TimeBetweenShots = 0.1f;  //time between each shot fired
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|WeaponStats")
+		float WeaponSpread = 10.0f;  //time between each shot fired
+
     /** AnimMontage to play each time we fire */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
-    class UAnimMontage *FireAnimation;
+    class UAnimMontage *CombatAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemStats|Gameplay")
 	class USoundBase *FireSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ItemStats|weaponStats")
 		int32 WeaponRange;
-
-
+	
 	//assigns projectile stats
 	void ApplyWeaponConfig(FWeaponData &weaponInfo);
 
@@ -173,7 +179,11 @@ public:
 
     FTimerHandle SafeFireHandle;
 
+	FTimerHandle WeaponResetHandle;
+
     float LastFireTime;
+
+	int32 attackSequence = 0;
 
     int32 currentBurstCounter = 0;
 
